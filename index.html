@@ -1,0 +1,1675 @@
+<!doctype html>
+<html lang="pt-BR" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Hardware Diagnostics Quest</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Rajdhani:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    
+    .font-orbitron { font-family: 'Orbitron', monospace; }
+    .font-rajdhani { font-family: 'Rajdhani', sans-serif; }
+    
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.3); }
+      50% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.6); }
+    }
+    
+    @keyframes slide-in {
+      from { transform: translateX(-100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes bounce-in {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+    
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    
+    @keyframes blink {
+      50% { border-color: transparent; }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    /* Mobile-friendly touch targets */
+    @media (max-width: 640px) {
+      button {
+        min-height: 44px;
+        min-width: 44px;
+      }
+      
+      input {
+        min-height: 44px;
+        font-size: 16px;
+      }
+      
+      .font-orbitron {
+        font-size: clamp(1rem, 2.5vw, 2rem);
+      }
+    }
+    
+    @keyframes scan-line {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+    
+    .animate-pulse-glow { animation: pulse-glow 2s infinite; }
+    .animate-slide-in { animation: slide-in 0.5s ease-out; }
+    .animate-bounce-in { animation: bounce-in 0.4s ease-out; }
+    .animate-shake { animation: shake 0.5s ease-in-out; }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+    
+    .glass-effect {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+    }
+    
+    .terminal-text {
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 0 10px currentColor;
+    }
+    
+    .scan-line::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.5), transparent);
+      animation: scan-line 3s linear infinite;
+    }
+    
+    .progress-bar {
+      background: linear-gradient(90deg, #00ff88, #00ccff);
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+    }
+    
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+    
+    @media (hover: hover) {
+      .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 40px rgba(0, 255, 136, 0.3);
+      }
+    }
+    
+    @media (max-width: 640px) {
+      .card-hover:active {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+      }
+    }
+    
+    .btn-cyber {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-cyber::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    .btn-cyber:hover::before {
+      left: 100%;
+    }
+    
+    .badge-earned {
+      animation: bounce-in 0.5s ease-out;
+    }
+    
+    .circuit-pattern {
+      background-image: 
+        linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-slate-900 text-white font-rajdhani overflow-auto">
+  <div id="app" class="min-h-full w-full circuit-pattern"><!-- Loading Screen -->
+   <div id="loading-screen" class="min-h-full flex items-center justify-center">
+    <div class="text-center">
+     <div class="w-20 h-20 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+     <p class="text-emerald-400 font-orbitron text-xl">INICIALIZANDO SISTEMA...</p>
+    </div>
+   </div><!-- Main Menu -->
+   <div id="main-menu" class="hidden min-h-full flex flex-col items-center justify-center p-6">
+    <div class="text-center mb-8 animate-slide-in">
+     <h1 id="game-title" class="font-orbitron text-3xl sm:text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 mb-2">HARDWARE DIAGNOSTICS</h1>
+     <p class="text-lg sm:text-2xl text-emerald-300">QUEST</p>
+     <p id="welcome-text" class="text-slate-400 mt-3 text-sm sm:text-base">Bem-vindo ao desafio!</p>
+    </div>
+    <div class="glass-effect rounded-2xl p-6 sm:p-8 w-full max-w-md animate-pulse-glow">
+     <div class="mb-6"><label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">IDENTIFICAÇÃO DO TÉCNICO</label> <input type="text" id="player-name-input" placeholder="Seu nome..." class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">
+     </div><button id="start-game-btn" class="btn-cyber w-full bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-bold py-3 rounded-lg text-base sm:text-lg font-orbitron transition-all"> 🚀 INICIAR MISSÃO </button> <button id="leaderboard-btn" class="btn-cyber w-full mt-4 bg-slate-700 text-emerald-400 font-bold py-2 rounded-lg text-sm sm:text-base transition-all"> 🏆 RANKING </button>
+    </div>
+    <div class="mt-8 text-center text-slate-500">
+     <p>AULA 16 — Teste e Diagnóstico de Hardware</p>
+     <p class="text-sm mt-2">Aprenda sobre POST, códigos de erro e diagnóstico de falhas</p>
+    </div>
+   </div><!-- Game Dashboard -->
+   <div id="game-dashboard" class="hidden min-h-full p-4 md:p-6"><!-- Header -->
+    <header class="glass-effect rounded-xl p-4 mb-6">
+     <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+       <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center font-orbitron font-bold text-xl"><span id="player-avatar">T</span>
+       </div>
+       <div>
+        <p class="text-emerald-400 text-sm">TÉCNICO</p>
+        <p id="player-display-name" class="font-bold text-lg">Nome</p>
+       </div>
+      </div>
+      <div class="flex items-center gap-6">
+       <div class="text-center">
+        <p class="text-emerald-400 text-sm">PONTUAÇÃO</p>
+        <p id="score-display" class="font-orbitron text-2xl font-bold text-cyan-400">0</p>
+       </div>
+       <div class="text-center">
+        <p class="text-emerald-400 text-sm">NÍVEL</p>
+        <p id="level-display" class="font-orbitron text-2xl font-bold text-yellow-400">1</p>
+       </div>
+       <div class="text-center">
+        <p class="text-emerald-400 text-sm">DESAFIOS</p>
+        <p id="challenges-display" class="font-orbitron text-2xl font-bold text-purple-400">0</p>
+       </div>
+      </div><button id="menu-btn" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg transition-all"> ☰ Menu </button>
+     </div><!-- Progress Bar -->
+     <div class="mt-4">
+      <div class="flex justify-between text-sm mb-1"><span class="text-slate-400">Progresso do Nível</span> <span id="xp-display" class="text-emerald-400">0/1000 XP</span>
+      </div>
+      <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+       <div id="xp-bar" class="progress-bar h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+      </div>
+     </div>
+    </header><!-- Badges Section -->
+    <div id="badges-section" class="glass-effect rounded-xl p-4 mb-6">
+     <h3 class="text-emerald-400 font-semibold mb-3">🏅 BADGES CONQUISTADAS</h3>
+     <div id="badges-container" class="flex flex-wrap gap-3"><span class="text-slate-500 text-sm">Complete desafios para ganhar badges!</span>
+     </div>
+    </div><!-- Challenge Selection -->
+    <div id="challenge-selection" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"><!-- Challenge cards will be inserted here -->
+    </div><!-- Active Challenge Area -->
+    <div id="challenge-area" class="hidden"><!-- Challenge content will be inserted here -->
+    </div>
+   </div><!-- Leaderboard Modal -->
+   <div id="leaderboard-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <div class="glass-effect rounded-2xl p-6 w-full max-w-lg max-h-[80%] overflow-auto">
+     <div class="flex justify-between items-center mb-6">
+      <h2 class="font-orbitron text-2xl text-emerald-400">🏆 RANKING</h2>
+      <div class="flex gap-2">
+       <button id="clear-ranking-btn" class="text-red-400 hover:text-red-300 text-sm px-3 py-1 rounded border border-red-500/50 hover:border-red-400 transition-all">🗑️ Limpar</button> <button id="close-leaderboard" class="text-slate-400 hover:text-white text-2xl">×</button>
+      </div>
+     </div>
+     <div id="leaderboard-list" class="space-y-3"><!-- Leaderboard entries will be inserted here -->
+     </div>
+    </div>
+   </div><!-- Result Modal -->
+   <div id="result-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <div class="glass-effect rounded-2xl p-8 w-full max-w-md text-center animate-bounce-in">
+     <div id="result-icon" class="text-6xl mb-4">
+      ✅
+     </div>
+     <h2 id="result-title" class="font-orbitron text-2xl mb-2">CORRETO!</h2>
+     <p id="result-message" class="text-slate-300 mb-4">Explicação aqui</p>
+     <div id="result-points" class="text-emerald-400 font-bold text-xl mb-6">
+      +100 XP
+     </div><button id="result-continue" class="btn-cyber bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 px-8 py-3 rounded-lg font-bold text-lg"> CONTINUAR </button>
+    </div>
+   </div><!-- Badge Earned Modal -->
+   <div id="badge-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+    <div class="glass-effect rounded-2xl p-8 w-full max-w-md text-center animate-bounce-in">
+     <div class="text-8xl mb-4 animate-float" id="badge-earned-icon">
+      🏅
+     </div>
+     <h2 class="font-orbitron text-2xl text-yellow-400 mb-2">BADGE CONQUISTADA!</h2>
+     <p id="badge-earned-name" class="text-white text-xl mb-4">Nome da Badge</p>
+     <p id="badge-earned-desc" class="text-slate-400 mb-6">Descrição</p><button id="badge-continue" class="btn-cyber bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 px-8 py-3 rounded-lg font-bold text-lg"> INCRÍVEL! </button>
+    </div>
+   </div>
+  </div>
+  <script>
+    // Game Configuration
+    const defaultConfig = {
+      game_title: "HARDWARE DIAGNOSTICS",
+      welcome_message: "Bem-vindo ao desafio de diagnóstico de hardware!"
+    };
+
+    let config = { ...defaultConfig };
+    let currentPlayer = null;
+    let allPlayers = [];
+    let currentChallenge = null;
+    let currentQuestionIndex = 0;
+    let challengeScore = 0;
+    let questionsAnswered = new Set();
+    let isInitializing = true;
+
+    // Challenge Categories with extensive content
+    const challenges = [
+      {
+        id: 'post-basics',
+        title: 'POST - Fundamentos',
+        description: 'Aprenda sobre o Power-On Self-Test',
+        icon: '🔌',
+        color: 'from-blue-600 to-blue-800',
+        difficulty: 1,
+        xpReward: 150,
+        badge: { icon: '🔌', name: 'Mestre do POST', desc: 'Completou os fundamentos do POST' },
+        questions: [
+          {
+            type: 'multiple',
+            question: 'O que significa a sigla POST?',
+            options: ['Power-On Self-Test', 'Program Operating System Test', 'Power Output Signal Test', 'Processor On Startup Test'],
+            correct: 0,
+            explanation: 'POST significa Power-On Self-Test (Auto-Teste de Inicialização). É uma rotina de diagnóstico executada pelo BIOS quando o computador é ligado.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual é a principal função do POST?',
+            options: ['Iniciar o sistema operacional', 'Verificar o funcionamento básico do hardware', 'Conectar à internet', 'Carregar drivers'],
+            correct: 1,
+            explanation: 'O POST verifica se os componentes essenciais do hardware (CPU, RAM, teclado, vídeo) estão funcionando corretamente antes de carregar o sistema operacional.'
+          },
+          {
+            type: 'multiple',
+            question: 'O POST é executado por qual componente?',
+            options: ['Sistema Operacional', 'Placa de Vídeo', 'BIOS/UEFI', 'Processador sozinho'],
+            correct: 2,
+            explanation: 'O POST é uma rotina armazenada e executada pelo BIOS (Basic Input/Output System) ou UEFI (Unified Extensible Firmware Interface).'
+          },
+          {
+            type: 'truefalse',
+            question: 'O POST é executado toda vez que o computador é ligado.',
+            correct: true,
+            explanation: 'Correto! O POST é executado automaticamente em cada inicialização para garantir que o hardware está funcionando antes de carregar o SO.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual componente é testado PRIMEIRO durante o POST?',
+            options: ['Disco rígido', 'Teclado', 'CPU e registradores', 'Monitor'],
+            correct: 2,
+            explanation: 'A CPU e seus registradores são testados primeiro, pois sem um processador funcional, nenhum outro teste pode ser executado.'
+          },
+          {
+            type: 'order',
+            question: 'Ordene a sequência CORRETA do POST (arraste para ordenar):',
+            items: ['Teste da CPU', 'Teste da memória RAM', 'Inicialização do vídeo', 'Teste dos periféricos'],
+            correctOrder: [0, 1, 2, 3],
+            explanation: 'A sequência correta é: CPU → RAM → Vídeo → Periféricos. Esta ordem garante que cada componente testado dependa dos anteriores.'
+          },
+          {
+            type: 'multiple',
+            question: 'O que acontece se o POST detectar uma falha crítica?',
+            options: ['O Windows inicia normalmente', 'O computador emite bipes de erro', 'O POST é ignorado', 'O disco é formatado'],
+            correct: 1,
+            explanation: 'Quando o POST detecta uma falha crítica, o sistema emite códigos sonoros (bipes) ou exibe códigos de erro através de LEDs para indicar o problema.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Um POST bem-sucedido geralmente emite um único bipe curto.',
+            correct: true,
+            explanation: 'Correto! Na maioria dos BIOS, um único bipe curto indica que o POST foi concluído com sucesso e o sistema pode continuar a inicialização.'
+          }
+        ]
+      },
+      {
+        id: 'beep-codes',
+        title: 'Códigos Sonoros',
+        description: 'Interprete os bipes de erro do BIOS',
+        icon: '🔊',
+        color: 'from-purple-600 to-purple-800',
+        difficulty: 2,
+        xpReward: 200,
+        badge: { icon: '🔊', name: 'Intérprete de Bipes', desc: 'Dominou os códigos sonoros do BIOS' },
+        questions: [
+          {
+            type: 'multiple',
+            question: 'Por que o BIOS usa códigos sonoros para indicar erros?',
+            options: ['Porque é mais moderno', 'Porque a placa de vídeo pode estar com defeito', 'Porque economiza energia', 'Porque é mais bonito'],
+            correct: 1,
+            explanation: 'Os códigos sonoros são usados porque, em caso de falha de vídeo, não seria possível exibir mensagens na tela. Os bipes permitem diagnóstico mesmo sem vídeo.'
+          },
+          {
+            type: 'multiple',
+            question: 'No BIOS AMI, o que significa 1 bipe longo + 3 bipes curtos?',
+            options: ['Erro de teclado', 'Erro de memória RAM', 'Erro de placa de vídeo', 'POST bem-sucedido'],
+            correct: 2,
+            explanation: 'No BIOS AMI, 1 bipe longo seguido de 3 curtos indica erro na placa de vídeo. Este é um dos códigos mais comuns para problemas gráficos.'
+          },
+          {
+            type: 'multiple',
+            question: 'O que geralmente indica bipes contínuos sem parar?',
+            options: ['Tudo funcionando', 'Erro de memória RAM', 'Erro de teclado', 'Disco cheio'],
+            correct: 1,
+            explanation: 'Bipes contínuos geralmente indicam problema grave com a memória RAM, como módulos mal encaixados, incompatíveis ou defeituosos.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Todos os fabricantes de BIOS usam os mesmos códigos sonoros.',
+            correct: false,
+            explanation: 'Falso! Cada fabricante (AMI, Award, Phoenix, etc.) tem seus próprios códigos sonoros. É importante consultar a documentação específica.'
+          },
+          {
+            type: 'match',
+            question: 'Associe os códigos sonoros AMI com seus significados:',
+            pairs: [
+              { left: '1 bipe curto', right: 'POST OK' },
+              { left: '3 bipes curtos', right: 'Erro de RAM' },
+              { left: '5 bipes curtos', right: 'Erro de CPU' },
+              { left: '1 longo + 2 curtos', right: 'Erro de vídeo' }
+            ],
+            explanation: 'Conhecer estes códigos é essencial para diagnóstico rápido sem ferramentas adicionais.'
+          },
+          {
+            type: 'multiple',
+            question: 'Se não há nenhum bipe durante o POST, qual é a causa mais provável?',
+            options: ['O computador está mudo', 'Speaker do sistema desconectado ou defeituoso', 'POST desativado', 'Windows está carregando'],
+            correct: 1,
+            explanation: 'A ausência de bipes pode indicar que o speaker interno está desconectado, defeituoso, ou que há uma falha tão grave que o sistema não consegue nem emitir sons.'
+          },
+          {
+            type: 'multiple',
+            question: 'No BIOS Phoenix, como são organizados os códigos sonoros?',
+            options: ['Apenas bipes longos', 'Sequências de 3 grupos separados por pausas', 'Um bipe por componente', 'Apenas silêncio'],
+            correct: 1,
+            explanation: 'O Phoenix BIOS usa sequências como 1-3-1 (1 bipe, pausa, 3 bipes, pausa, 1 bipe), facilitando a identificação de diferentes tipos de erro.'
+          },
+          {
+            type: 'truefalse',
+            question: 'É possível desativar completamente os bipes do POST no BIOS.',
+            correct: true,
+            explanation: 'Verdadeiro! A maioria dos BIOS permite desativar os sons do POST nas configurações. Porém, isso não é recomendado para diagnóstico.'
+          }
+        ]
+      },
+      {
+        id: 'led-diagnostics',
+        title: 'LEDs de Diagnóstico',
+        description: 'Entenda os indicadores luminosos',
+        icon: '💡',
+        color: 'from-yellow-600 to-orange-600',
+        difficulty: 2,
+        xpReward: 180,
+        badge: { icon: '💡', name: 'Especialista em LEDs', desc: 'Dominou diagnóstico por LEDs' },
+        questions: [
+          {
+            type: 'multiple',
+            question: 'Qual a vantagem dos LEDs de diagnóstico sobre os códigos sonoros?',
+            options: ['São mais baratos', 'Permitem identificação visual mesmo em ambientes barulhentos', 'Consomem menos energia', 'São mais bonitos'],
+            correct: 1,
+            explanation: 'LEDs de diagnóstico oferecem feedback visual permanente, útil em data centers barulhentos ou quando o speaker está defeituoso.'
+          },
+          {
+            type: 'multiple',
+            question: 'Em placas-mãe modernas, qual LED geralmente indica falha de CPU?',
+            options: ['Verde', 'Amarelo', 'Vermelho', 'Azul'],
+            correct: 2,
+            explanation: 'O LED vermelho é universalmente associado a erros críticos. Em muitas placas, um LED vermelho próximo ao socket indica problema com a CPU.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Placas-mãe gamer frequentemente possuem displays de código de erro de 2 dígitos.',
+            correct: true,
+            explanation: 'Correto! Muitas placas-mãe entusiastas possuem displays LED de 2 dígitos (Debug LED) que mostram códigos hexadecimais para diagnóstico detalhado.'
+          },
+          {
+            type: 'multiple',
+            question: 'O que significa quando TODOS os LEDs de diagnóstico estão apagados?',
+            options: ['Tudo funcionando perfeitamente', 'Fonte de alimentação com problema', 'Disco rígido cheio', 'Windows corrompido'],
+            correct: 1,
+            explanation: 'Se todos os LEDs estão apagados, provavelmente a placa-mãe não está recebendo energia. Verifique a fonte, cabos e o botão da fonte.'
+          },
+          {
+            type: 'multiple',
+            question: 'O LED "DRAM" aceso durante o boot indica:',
+            options: ['RAM funcionando perfeitamente', 'Problema detectado na memória RAM', 'Disco sendo acessado', 'Rede conectada'],
+            correct: 1,
+            explanation: 'O LED DRAM aceso (ou piscando) durante o boot indica que o POST detectou um problema com a memória RAM.'
+          },
+          {
+            type: 'order',
+            question: 'Ordene os LEDs de diagnóstico na sequência típica de teste:',
+            items: ['CPU', 'DRAM', 'VGA', 'BOOT'],
+            correctOrder: [0, 1, 2, 3],
+            explanation: 'A sequência típica é CPU → DRAM → VGA → BOOT, seguindo a ordem do POST. Cada LED acende durante o teste do respectivo componente.'
+          },
+          {
+            type: 'multiple',
+            question: 'O que fazer se o LED de VGA ficar permanentemente aceso?',
+            options: ['Reiniciar o Windows', 'Verificar a placa de vídeo e suas conexões', 'Trocar o teclado', 'Formatar o disco'],
+            correct: 1,
+            explanation: 'LED VGA permanente indica problema com a placa de vídeo. Verifique se está bem encaixada, se os cabos de energia estão conectados e teste em outro slot.'
+          },
+          {
+            type: 'truefalse',
+            question: 'O LED de atividade do HD pisca quando há leitura ou escrita no disco.',
+            correct: true,
+            explanation: 'Correto! O LED do HD (geralmente no gabinete) indica atividade do disco. Piscando = funcionando. Sempre aceso = possível travamento.'
+          }
+        ]
+      },
+      {
+        id: 'common-failures',
+        title: 'Falhas Comuns',
+        description: 'Diagnostique problemas frequentes',
+        icon: '🔧',
+        color: 'from-red-600 to-red-800',
+        difficulty: 3,
+        xpReward: 250,
+        badge: { icon: '🔧', name: 'Detetive de Hardware', desc: 'Especialista em falhas comuns' },
+        questions: [
+          {
+            type: 'scenario',
+            question: 'CENÁRIO: O computador liga mas a tela fica preta e há 3 bipes curtos. Qual é o diagnóstico mais provável?',
+            options: ['Disco rígido com defeito', 'Memória RAM com problema', 'Fonte de alimentação fraca', 'Cabo de vídeo desconectado'],
+            correct: 1,
+            explanation: 'Três bipes curtos no BIOS AMI indicam erro de memória RAM. Tente reencaixar os módulos ou testá-los individualmente.'
+          },
+          {
+            type: 'scenario',
+            question: 'CENÁRIO: O PC não liga de jeito nenhum - nenhum LED acende, nenhum ventilador gira. O que verificar primeiro?',
+            options: ['Driver de vídeo', 'Fonte de alimentação e cabos de energia', 'Sistema operacional', 'Antivírus'],
+            correct: 1,
+            explanation: 'Se nada liga, o problema é falta de energia. Verifique: tomada, cabo de força, botão da fonte (I/O), conexões ATX na placa-mãe.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual ferramenta é usada para testar uma fonte de alimentação sem conectá-la à placa-mãe?',
+            options: ['Multímetro', 'Testador de fonte ATX', 'Osciloscópio', 'Todas as anteriores'],
+            correct: 3,
+            explanation: 'Todas podem ser usadas! O testador ATX é mais prático, o multímetro permite medições precisas, e o osciloscópio analisa a qualidade da energia.'
+          },
+          {
+            type: 'scenario',
+            question: 'CENÁRIO: O computador reinicia sozinho durante jogos ou tarefas pesadas. Causa mais provável?',
+            options: ['Vírus de computador', 'Superaquecimento ou fonte subdimensionada', 'Disco rígido cheio', 'Windows desatualizado'],
+            correct: 1,
+            explanation: 'Reinícios sob carga indicam superaquecimento (CPU/GPU desligando por proteção) ou fonte que não consegue fornecer energia suficiente.'
+          },
+          {
+            type: 'multiple',
+            question: 'O que é a "Tela Azul da Morte" (BSOD) e o que pode causar?',
+            options: ['Erro de software apenas', 'Erro crítico que pode ser hardware ou software', 'Problema de monitor', 'Atualização do Windows'],
+            correct: 1,
+            explanation: 'A BSOD indica erro crítico do sistema. Pode ser causada por drivers corrompidos, RAM defeituosa, superaquecimento, ou problemas de disco.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Capacitores estufados na placa-mãe são sinal de defeito grave.',
+            correct: true,
+            explanation: 'Verdadeiro! Capacitores estufados, vazando ou com topo abaulado indicam falha iminente. A placa pode apresentar instabilidade ou parar de funcionar.'
+          },
+          {
+            type: 'scenario',
+            question: 'CENÁRIO: O computador liga, passa no POST, mas fica em loop de reinicialização antes de carregar o Windows.',
+            options: ['Problema de RAM', 'Corrupção do setor de boot ou falha no disco', 'Monitor com defeito', 'Teclado desconectado'],
+            correct: 1,
+            explanation: 'Loop de reinício após POST geralmente indica problema no sistema de boot: MBR corrompido, disco com setores defeituosos, ou SO danificado.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual é o procedimento correto para diagnosticar falha intermitente de RAM?',
+            options: ['Trocar o processador', 'Usar software de diagnóstico como MemTest86', 'Formatar o disco', 'Reinstalar drivers'],
+            correct: 1,
+            explanation: 'MemTest86 ou Windows Memory Diagnostic testam a RAM exaustivamente, identificando erros que podem causar travamentos e BSOD intermitentes.'
+          }
+        ]
+      },
+      {
+        id: 'usb-testing',
+        title: 'Testador de USB',
+        description: 'Aprenda sobre teste de portas USB',
+        icon: '🔌',
+        color: 'from-green-600 to-teal-600',
+        difficulty: 2,
+        xpReward: 170,
+        badge: { icon: '🔌', name: 'Expert USB', desc: 'Especialista em diagnóstico USB' },
+        questions: [
+          {
+            type: 'multiple',
+            question: 'O que um testador de USB pode medir?',
+            options: ['Apenas velocidade', 'Tensão, corrente e potência', 'Apenas se está funcionando', 'Temperatura da porta'],
+            correct: 1,
+            explanation: 'Testadores USB medem tensão (V), corrente (A) e potência (W), permitindo verificar se a porta fornece energia adequada para dispositivos.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual é a tensão padrão de uma porta USB?',
+            options: ['3.3V', '5V', '12V', '9V'],
+            correct: 1,
+            explanation: 'O padrão USB fornece 5V de tensão. Portas defeituosas podem fornecer tensão instável ou abaixo do especificado.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Portas USB 3.0 podem fornecer mais corrente que USB 2.0.',
+            correct: true,
+            explanation: 'Verdadeiro! USB 2.0 fornece até 500mA, enquanto USB 3.0 pode fornecer até 900mA, e USB Power Delivery muito mais.'
+          },
+          {
+            type: 'multiple',
+            question: 'Se um dispositivo USB não é reconhecido, qual é o primeiro passo de diagnóstico?',
+            options: ['Formatar o dispositivo', 'Testar em outra porta USB', 'Reinstalar o Windows', 'Comprar outro dispositivo'],
+            correct: 1,
+            explanation: 'Testar em outra porta isola se o problema é na porta, no dispositivo ou no cabo. É o diagnóstico mais básico e eficaz.'
+          },
+          {
+            type: 'multiple',
+            question: 'O que pode indicar uma porta USB que fornece apenas 4.2V em vez de 5V?',
+            options: ['Funcionamento normal', 'Porta ou controlador com defeito', 'Dispositivo muito potente', 'Windows desatualizado'],
+            correct: 1,
+            explanation: 'Tensão significativamente abaixo de 5V indica problema no controlador USB, trilha da placa-mãe ou fonte de alimentação.'
+          },
+          {
+            type: 'scenario',
+            question: 'CENÁRIO: O celular carrega muito lentamente quando conectado ao PC. O que verificar?',
+            options: ['A bateria do celular', 'A corrente fornecida pela porta USB', 'O sistema operacional do PC', 'A memória RAM'],
+            correct: 1,
+            explanation: 'Carregamento lento indica que a porta não fornece corrente suficiente. Use um testador USB para verificar a amperagem disponível.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Portas USB frontais do gabinete podem ter problemas se os cabos internos estiverem mal conectados.',
+            correct: true,
+            explanation: 'Correto! As portas frontais dependem de cabos conectados à placa-mãe. Conexões frouxas causam mau funcionamento ou falta de energia.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual geração de USB introduziu o conector reversível Type-C?',
+            options: ['USB 1.0', 'USB 2.0', 'USB 3.1', 'USB 4.0'],
+            correct: 2,
+            explanation: 'O conector USB Type-C foi introduzido com o USB 3.1, oferecendo conexão reversível e suporte a maiores taxas de transferência e potência.'
+          }
+        ]
+      },
+      {
+        id: 'esd-safety',
+        title: 'Segurança ESD',
+        description: 'Proteção contra descarga eletrostática',
+        icon: '⚡',
+        color: 'from-amber-600 to-yellow-600',
+        difficulty: 1,
+        xpReward: 130,
+        badge: { icon: '⚡', name: 'Guardião ESD', desc: 'Mestre em proteção eletrostática' },
+        questions: [
+          {
+            type: 'multiple',
+            question: 'O que significa ESD?',
+            options: ['Electronic System Damage', 'Electrostatic Discharge', 'Electrical Safety Device', 'External Storage Drive'],
+            correct: 1,
+            explanation: 'ESD = Electrostatic Discharge (Descarga Eletrostática). É a liberação repentina de eletricidade estática que pode danificar componentes eletrônicos.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual componente é mais sensível a danos por ESD?',
+            options: ['Gabinete', 'Memória RAM e processador', 'Cabos de força', 'Parafusos'],
+            correct: 1,
+            explanation: 'Chips e circuitos integrados como RAM, CPU e placas são extremamente sensíveis. Uma descarga imperceptível pode danificá-los permanentemente.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Você pode sentir descargas ESD a partir de 3.000 volts, mas componentes podem ser danificados com apenas 30 volts.',
+            correct: true,
+            explanation: 'Verdadeiro! Humanos só percebem descargas acima de ~3.000V, mas componentes eletrônicos podem ser destruídos com tensões muito menores.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual é a forma CORRETA de se aterrar antes de manusear componentes?',
+            options: ['Tocar em madeira', 'Usar pulseira antiestática conectada ao gabinete aterrado', 'Lavar as mãos', 'Usar luvas de borracha'],
+            correct: 1,
+            explanation: 'A pulseira antiestática, conectada a um ponto aterrado, dissipa continuamente qualquer carga estática acumulada no corpo.'
+          },
+          {
+            type: 'multiple',
+            question: 'Onde NUNCA se deve apoiar componentes eletrônicos?',
+            options: ['Embalagem antiestática', 'Superfície metálica aterrada', 'Carpete ou superfícies sintéticas', 'Bancada de madeira'],
+            correct: 2,
+            explanation: 'Carpetes e materiais sintéticos geram e acumulam eletricidade estática. Componentes devem ficar em embalagens antiestáticas ou superfícies dissipativas.'
+          },
+          {
+            type: 'truefalse',
+            question: 'A umidade do ar afeta a geração de eletricidade estática.',
+            correct: true,
+            explanation: 'Verdadeiro! Ar seco aumenta a geração de estática. Ambientes com umidade controlada (40-60%) reduzem riscos de ESD.'
+          },
+          {
+            type: 'multiple',
+            question: 'Por que as embalagens de componentes são geralmente cinza ou rosa?',
+            options: ['Estética apenas', 'São materiais antiestáticos ou dissipativos', 'São mais baratas', 'Identificação do fabricante'],
+            correct: 1,
+            explanation: 'Embalagens cinza (condutivas) e rosa (dissipativas) protegem componentes de ESD. Nunca descarte um componente em saco plástico comum!'
+          },
+          {
+            type: 'order',
+            question: 'Ordene os passos corretos antes de abrir um computador:',
+            items: ['Desligar e desconectar da tomada', 'Pressionar botão power para descarregar capacitores', 'Colocar pulseira antiestática', 'Abrir o gabinete'],
+            correctOrder: [0, 1, 2, 3],
+            explanation: 'Esta sequência garante segurança pessoal e proteção dos componentes contra ESD.'
+          }
+        ]
+      },
+      {
+        id: 'diagnostic-tools',
+        title: 'Ferramentas de Diagnóstico',
+        description: 'Conheça as ferramentas profissionais',
+        icon: '🛠️',
+        color: 'from-indigo-600 to-purple-600',
+        difficulty: 3,
+        xpReward: 220,
+        badge: { icon: '🛠️', name: 'Técnico Equipado', desc: 'Conhece todas as ferramentas' },
+        questions: [
+          {
+            type: 'multiple',
+            question: 'Qual ferramenta mede tensão, corrente e resistência?',
+            options: ['Alicate', 'Multímetro', 'Chave de fenda', 'Pinça'],
+            correct: 1,
+            explanation: 'O multímetro é essencial para técnicos. Permite verificar se fontes, cabos e componentes estão fornecendo energia corretamente.'
+          },
+          {
+            type: 'multiple',
+            question: 'Para que serve uma placa de diagnóstico POST?',
+            options: ['Aumentar a velocidade do PC', 'Exibir códigos de erro durante o boot', 'Melhorar gráficos', 'Adicionar mais RAM'],
+            correct: 1,
+            explanation: 'Placas POST Card são inseridas em slots PCI/PCIe e exibem códigos hexadecimais que identificam onde o boot está falhando.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Um testador de cabos pode verificar se um cabo de rede está com fios rompidos.',
+            correct: true,
+            explanation: 'Correto! Testadores de cabo verificam continuidade, identificam fios cruzados, rompidos ou em curto-circuito.'
+          },
+          {
+            type: 'match',
+            question: 'Associe a ferramenta com sua função:',
+            pairs: [
+              { left: 'Multímetro', right: 'Medir tensão e corrente' },
+              { left: 'POST Card', right: 'Códigos de erro de boot' },
+              { left: 'Testador de fonte', right: 'Verificar PSU ATX' },
+              { left: 'Soprador de ar', right: 'Limpeza de poeira' }
+            ],
+            explanation: 'Cada ferramenta tem função específica no diagnóstico profissional de hardware.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual software é considerado padrão para teste de memória RAM?',
+            options: ['CCleaner', 'MemTest86', 'WinRAR', 'Photoshop'],
+            correct: 1,
+            explanation: 'MemTest86 é a ferramenta padrão da indústria para teste exaustivo de memória RAM, detectando erros que causam instabilidade.'
+          },
+          {
+            type: 'multiple',
+            question: 'CrystalDiskInfo é usado para:',
+            options: ['Testar memória RAM', 'Verificar saúde de discos HD/SSD via S.M.A.R.T.', 'Configurar BIOS', 'Editar fotos'],
+            correct: 1,
+            explanation: 'CrystalDiskInfo lê dados S.M.A.R.T. dos discos, mostrando temperatura, erros e previsão de falhas.'
+          },
+          {
+            type: 'scenario',
+            question: 'CENÁRIO: Você precisa identificar por que um PC não passa do POST, mas não há bipes. Qual ferramenta usar?',
+            options: ['Antivírus', 'POST Card de diagnóstico', 'Desfragmentador', 'Editor de texto'],
+            correct: 1,
+            explanation: 'A POST Card mostrará em qual etapa do boot o sistema está parando, mesmo sem áudio ou vídeo funcionando.'
+          },
+          {
+            type: 'truefalse',
+            question: 'O HWiNFO pode monitorar temperaturas e voltagens em tempo real.',
+            correct: true,
+            explanation: 'Verdadeiro! HWiNFO é uma ferramenta completa que monitora sensores de temperatura, voltagem, velocidade de coolers e muito mais.'
+          }
+        ]
+      },
+      {
+        id: 'practical-diagnosis',
+        title: 'Diagnóstico Prático',
+        description: 'Simulações de casos reais',
+        icon: '🎯',
+        color: 'from-pink-600 to-rose-600',
+        difficulty: 3,
+        xpReward: 280,
+        badge: { icon: '🎯', name: 'Diagnosta Mestre', desc: 'Resolveu casos complexos' },
+        questions: [
+          {
+            type: 'scenario',
+            question: 'CASO 1: Cliente relata que o PC desliga sozinho após ~15 minutos de uso. Ao abrir, você nota muita poeira. Diagnóstico?',
+            options: ['Vírus', 'Superaquecimento por obstrução de ventilação', 'Disco cheio', 'RAM insuficiente'],
+            correct: 1,
+            explanation: 'Poeira bloqueia a dissipação de calor. O processador aquece e o sistema desliga por proteção térmica. Limpeza resolverá.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 2: Novo módulo de RAM instalado, PC não liga mais (nenhum bipe, nenhum LED). O que aconteceu provavelmente?',
+            options: ['RAM incompatível causando falha no POST', 'Windows corrompido', 'Monitor com defeito', 'Teclado incompatível'],
+            correct: 0,
+            explanation: 'RAM incompatível (velocidade, tipo ou voltagem) pode impedir completamente o boot. Remova o novo módulo e teste.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 3: Computador apresenta BSOD aleatória com diferentes códigos de erro. O que testar primeiro?',
+            options: ['Trocar o monitor', 'Executar MemTest86 para verificar RAM', 'Atualizar navegador', 'Mudar papel de parede'],
+            correct: 1,
+            explanation: 'BSODs aleatórias com códigos variados são sintoma clássico de RAM defeituosa. MemTest86 identificará o módulo problemático.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 4: O cliente diz que as portas USB frontais não funcionam, mas as traseiras sim. Causa provável?',
+            options: ['Driver USB corrompido', 'Cabo interno do painel frontal desconectado', 'Fonte fraca', 'Processador com defeito'],
+            correct: 1,
+            explanation: 'Portas frontais dependem de cabos conectados à placa-mãe. Se apenas as frontais falham, o cabo interno está desconectado ou defeituoso.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 5: PC emite 1 bipe longo repetido continuamente. O que indica e qual a ação?',
+            options: ['Tudo OK, apenas aguardar', 'Erro de RAM - reencaixar ou substituir módulos', 'Disco cheio - limpar arquivos', 'Monitor desconectado'],
+            correct: 1,
+            explanation: 'Bipes longos contínuos indicam falha de memória. Desligue, remova e reencaixe os módulos de RAM. Teste um de cada vez.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 6: Computador liga, ventoinhas giram, mas não há vídeo e nenhum bipe. LED vermelho aceso próximo ao slot de RAM.',
+            options: ['Problema na placa de vídeo', 'Memória RAM não detectada ou com defeito', 'HD corrompido', 'Cabo HDMI ruim'],
+            correct: 1,
+            explanation: 'O LED vermelho na área de RAM indica que o POST falhou ao testar a memória. Reencaixe ou teste cada módulo separadamente.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 7: Ao usar multímetro na fonte, você mede 4.5V no fio amarelo (deveria ser 12V). Conclusão?',
+            options: ['Leitura normal', 'Fonte de alimentação defeituosa ou subdimensionada', 'Multímetro descalibrado', 'Placa-mãe com curto'],
+            correct: 1,
+            explanation: 'O fio amarelo deve fornecer 12V (±5%). Uma leitura de 4.5V indica fonte defeituosa que não consegue manter a tensão correta.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 8: Cliente adicionou uma placa de vídeo potente e agora o PC reinicia em jogos. POST e Windows funcionam normalmente.',
+            options: ['Placa de vídeo defeituosa', 'Fonte de alimentação não suporta a demanda da GPU', 'Jogo pirata', 'SSD cheio'],
+            correct: 1,
+            explanation: 'GPUs potentes exigem muita energia. Se a fonte não tem potência suficiente, o sistema reinicia sob carga. Calcule a demanda e troque a PSU.'
+          }
+        ]
+      }
+    ];
+
+    // Badges available
+    const allBadges = [
+      { id: 'first-challenge', icon: '🌟', name: 'Primeira Missão', desc: 'Completou seu primeiro desafio' },
+      { id: 'perfect-score', icon: '💯', name: 'Perfeição', desc: 'Acertou todas as questões de um desafio' },
+      { id: 'speed-demon', icon: '⚡', name: 'Velocista', desc: 'Completou um desafio em menos de 2 minutos' },
+      { id: 'level-5', icon: '🎖️', name: 'Técnico Sênior', desc: 'Alcançou o nível 5' },
+      { id: 'all-challenges', icon: '👑', name: 'Mestre Supremo', desc: 'Completou todos os desafios' },
+      ...challenges.map(c => ({ id: c.id, ...c.badge }))
+    ];
+
+    // Initialize SDKs
+    async function initializeApp() {
+      try {
+        // Initialize Element SDK
+        if (window.elementSdk) {
+          window.elementSdk.init({
+            defaultConfig,
+            onConfigChange: async (newConfig) => {
+              config = { ...config, ...newConfig };
+              updateUIFromConfig();
+            },
+            mapToCapabilities: (cfg) => ({
+              recolorables: [],
+              borderables: [],
+              fontEditable: undefined,
+              fontSizeable: undefined
+            }),
+            mapToEditPanelValues: (cfg) => new Map([
+              ["game_title", cfg.game_title || defaultConfig.game_title],
+              ["welcome_message", cfg.welcome_message || defaultConfig.welcome_message]
+            ])
+          });
+        }
+
+        // Initialize Data SDK for cloud persistence
+        if (window.dataSdk) {
+          const dataHandler = {
+            onDataChanged(data) {
+              allPlayers = data || [];
+            }
+          };
+
+          const initResult = await window.dataSdk.init(dataHandler);
+          if (!initResult.isOk) {
+            console.error("Data SDK init failed, will use localStorage fallback");
+            loadPlayersFromLocalStorage();
+          }
+        } else {
+          // Fallback to localStorage if Data SDK not available
+          loadPlayersFromLocalStorage();
+        }
+
+        isInitializing = false;
+
+        // Show main menu after initialization
+        setTimeout(() => {
+          document.getElementById('loading-screen').classList.add('hidden');
+          document.getElementById('main-menu').classList.remove('hidden');
+        }, 1500);
+
+      } catch (error) {
+        console.error("Initialization error:", error);
+        loadPlayersFromLocalStorage();
+        isInitializing = false;
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('access-code-screen').classList.remove('hidden');
+      }
+    }
+
+    function loadPlayersFromLocalStorage() {
+      const stored = localStorage.getItem('hardwareQuestPlayers');
+      if (stored) {
+        try {
+          allPlayers = JSON.parse(stored);
+        } catch (e) {
+          allPlayers = [];
+        }
+      }
+    }
+
+    function savePlayersToLocalStorage() {
+      localStorage.setItem('hardwareQuestPlayers', JSON.stringify(allPlayers));
+    }
+
+    async function savePlayerToCloud(player) {
+      if (!window.dataSdk || isInitializing) {
+        savePlayersToLocalStorage();
+        return;
+      }
+
+      try {
+        const existingPlayer = allPlayers.find(p => p.player_name === player.player_name);
+        
+        if (existingPlayer && existingPlayer.__backendId) {
+          // Update existing player
+          const updateResult = await window.dataSdk.update(player);
+          if (updateResult.isError) {
+            console.error("Failed to update player:", updateResult.error);
+            savePlayersToLocalStorage();
+          }
+        } else {
+          // Create new player
+          const { __backendId, ...playerData } = player;
+          const createResult = await window.dataSdk.create(playerData);
+          if (createResult.isError) {
+            console.error("Failed to create player:", createResult.error);
+            savePlayersToLocalStorage();
+          }
+        }
+      } catch (error) {
+        console.error("Error saving to cloud:", error);
+        savePlayersToLocalStorage();
+      }
+    }
+
+    async function loadPlayersFromCloud() {
+      if (!window.dataSdk || isInitializing) {
+        loadPlayersFromLocalStorage();
+        return;
+      }
+
+      try {
+        // Data SDK loads players automatically via onDataChanged
+        // Just ensure allPlayers is updated
+        if (!allPlayers || allPlayers.length === 0) {
+          loadPlayersFromLocalStorage();
+        }
+      } catch (error) {
+        console.error("Error loading from cloud:", error);
+        loadPlayersFromLocalStorage();
+      }
+    }
+
+    function updateUIFromConfig() {
+      const titleEl = document.getElementById('game-title');
+      const welcomeEl = document.getElementById('welcome-text');
+      
+      if (titleEl) titleEl.textContent = config.game_title || defaultConfig.game_title;
+      if (welcomeEl) welcomeEl.textContent = config.welcome_message || defaultConfig.welcome_message;
+    }
+
+    // Event Listeners
+    document.getElementById('start-game-btn').addEventListener('click', startGame);
+    document.getElementById('leaderboard-btn').addEventListener('click', showLeaderboard);
+    document.getElementById('close-leaderboard').addEventListener('click', hideLeaderboard);
+    document.getElementById('clear-ranking-btn').addEventListener('click', clearRanking);
+    document.getElementById('menu-btn').addEventListener('click', returnToMenu);
+    document.getElementById('result-continue').addEventListener('click', continueAfterResult);
+    document.getElementById('badge-continue').addEventListener('click', closeBadgeModal);
+
+    async function startGame() {
+      const nameInput = document.getElementById('player-name-input');
+      const playerName = nameInput.value.trim();
+      
+      if (!playerName) {
+        nameInput.classList.add('animate-shake', 'border-red-500');
+        setTimeout(() => {
+          nameInput.classList.remove('animate-shake', 'border-red-500');
+        }, 500);
+        return;
+      }
+
+      // Check if player exists
+      const existingPlayer = allPlayers.find(p => p.player_name.toLowerCase() === playerName.toLowerCase());
+      
+      if (existingPlayer) {
+        currentPlayer = existingPlayer;
+      } else {
+        // Create new player
+        const newPlayer = {
+          player_name: playerName,
+          total_score: 0,
+          current_level: 1,
+          badges_earned: '',
+          challenges_completed: 0,
+          created_at: new Date().toISOString()
+        };
+
+        // Save to cloud (or localStorage as fallback)
+        await savePlayerToCloud(newPlayer);
+        
+        // Update local array
+        const playerIndex = allPlayers.findIndex(p => p.player_name === playerName);
+        if (playerIndex >= 0) {
+          currentPlayer = allPlayers[playerIndex];
+        } else {
+          allPlayers.push(newPlayer);
+          currentPlayer = newPlayer;
+          savePlayersToLocalStorage();
+        }
+      }
+
+      showGameDashboard();
+    }
+
+    function showGameDashboard() {
+      document.getElementById('main-menu').classList.add('hidden');
+      document.getElementById('game-dashboard').classList.remove('hidden');
+      
+      updatePlayerDisplay();
+      renderChallengeSelection();
+    }
+
+    function updatePlayerDisplay() {
+      if (!currentPlayer) return;
+
+      // Update from allPlayers if available
+      const updatedPlayer = allPlayers.find(p => p.player_name === currentPlayer.player_name);
+      if (updatedPlayer) {
+        currentPlayer = updatedPlayer;
+      }
+
+      document.getElementById('player-avatar').textContent = currentPlayer.player_name.charAt(0).toUpperCase();
+      document.getElementById('player-display-name').textContent = currentPlayer.player_name;
+      document.getElementById('score-display').textContent = currentPlayer.total_score || 0;
+      document.getElementById('level-display').textContent = currentPlayer.current_level || 1;
+      document.getElementById('challenges-display').textContent = currentPlayer.challenges_completed || 0;
+      
+      const xpForLevel = (currentPlayer.total_score || 0) % 1000;
+      document.getElementById('xp-display').textContent = `${xpForLevel}/1000 XP`;
+      document.getElementById('xp-bar').style.width = `${(xpForLevel / 1000) * 100}%`;
+
+      renderBadges();
+    }
+
+    function renderBadges() {
+      const container = document.getElementById('badges-container');
+      const earnedBadges = (currentPlayer.badges_earned || '').split(',').filter(b => b);
+      
+      if (earnedBadges.length === 0) {
+        container.innerHTML = '<span class="text-slate-500 text-sm">Complete desafios para ganhar badges!</span>';
+        return;
+      }
+
+      container.innerHTML = earnedBadges.map(badgeId => {
+        const badge = allBadges.find(b => b.id === badgeId);
+        if (!badge) return '';
+        return `
+          <div class="badge-earned bg-slate-700 px-3 py-2 rounded-lg flex items-center gap-2" title="${badge.desc}">
+            <span class="text-2xl">${badge.icon}</span>
+            <span class="text-sm text-slate-300">${badge.name}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderChallengeSelection() {
+      const container = document.getElementById('challenge-selection');
+      container.innerHTML = '';
+      
+      const completedChallenges = (currentPlayer.badges_earned || '').split(',');
+
+      challenges.forEach((challenge, index) => {
+        const isCompleted = completedChallenges.includes(challenge.id);
+        const difficultyStars = '⭐'.repeat(challenge.difficulty);
+        
+        const card = document.createElement('div');
+        card.className = `card-hover glass-effect rounded-xl p-6 cursor-pointer ${isCompleted ? 'opacity-75' : ''}`;
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('animate-slide-in');
+        
+        card.innerHTML = `
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-16 h-16 rounded-xl bg-gradient-to-br ${challenge.color} flex items-center justify-center text-3xl">
+              ${challenge.icon}
+            </div>
+            ${isCompleted ? '<span class="text-emerald-400 text-2xl">✓</span>' : ''}
+          </div>
+          <h3 class="font-orbitron text-xl text-white mb-2">${challenge.title}</h3>
+          <p class="text-slate-400 text-sm mb-4">${challenge.description}</p>
+          <div class="flex justify-between items-center">
+            <span class="text-sm">${difficultyStars}</span>
+            <span class="text-emerald-400 font-bold">+${challenge.xpReward} XP</span>
+          </div>
+          <div class="mt-3 text-xs text-slate-500">${challenge.questions.length} questões</div>
+        `;
+
+        card.addEventListener('click', () => startChallenge(challenge));
+        container.appendChild(card);
+      });
+    }
+
+    function startChallenge(challenge) {
+      currentChallenge = challenge;
+      currentQuestionIndex = 0;
+      challengeScore = 0;
+      questionsAnswered.clear();
+
+      document.getElementById('challenge-selection').classList.add('hidden');
+      document.getElementById('badges-section').classList.add('hidden');
+      document.getElementById('challenge-area').classList.remove('hidden');
+
+      renderCurrentQuestion();
+    }
+
+    function renderCurrentQuestion() {
+      const area = document.getElementById('challenge-area');
+      const question = currentChallenge.questions[currentQuestionIndex];
+      const totalQuestions = currentChallenge.questions.length;
+
+      let questionHTML = `
+        <div class="glass-effect rounded-xl p-6 animate-slide-in">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <span class="text-emerald-400 font-semibold">${currentChallenge.title}</span>
+              <h2 class="font-orbitron text-2xl text-white">Questão ${currentQuestionIndex + 1}/${totalQuestions}</h2>
+            </div>
+            <div class="text-right">
+              <p class="text-slate-400 text-sm">Pontos neste desafio</p>
+              <p class="font-orbitron text-xl text-cyan-400">${challengeScore}</p>
+            </div>
+          </div>
+          
+          <div class="w-full h-2 bg-slate-700 rounded-full mb-6">
+            <div class="progress-bar h-full rounded-full transition-all" style="width: ${((currentQuestionIndex) / totalQuestions) * 100}%"></div>
+          </div>
+
+          <div class="bg-slate-800/50 rounded-lg p-6 mb-6">
+            <p class="text-xl text-white leading-relaxed">${question.question}</p>
+          </div>
+      `;
+
+      // Render based on question type
+      switch (question.type) {
+        case 'multiple':
+        case 'scenario':
+          questionHTML += renderMultipleChoice(question);
+          break;
+        case 'truefalse':
+          questionHTML += renderTrueFalse(question);
+          break;
+        case 'order':
+          questionHTML += renderOrderQuestion(question);
+          break;
+        case 'match':
+          questionHTML += renderMatchQuestion(question);
+          break;
+      }
+
+      questionHTML += `
+          <button id="skip-btn" class="mt-4 text-slate-500 hover:text-slate-300 transition-all">
+            Pular questão →
+          </button>
+        </div>
+      `;
+
+      area.innerHTML = questionHTML;
+
+      // Add skip button listener
+      document.getElementById('skip-btn').addEventListener('click', () => {
+        showResultModal('⏭️', 'Questão Pulada', question.explanation, '+0 XP');
+      });
+
+      // Add specific event listeners based on question type
+      setupQuestionListeners(question);
+    }
+
+    function renderMultipleChoice(question) {
+      return `
+        <div class="grid gap-3" id="options-container">
+          ${question.options.map((option, index) => `
+            <button class="option-btn w-full text-left bg-slate-700 hover:bg-slate-600 p-4 rounded-lg transition-all border-2 border-transparent hover:border-emerald-500/50" data-index="${index}">
+              <span class="inline-block w-8 h-8 rounded-full bg-slate-600 text-center leading-8 mr-3 font-bold">
+                ${String.fromCharCode(65 + index)}
+              </span>
+              ${option}
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderTrueFalse(question) {
+      return `
+        <div class="grid grid-cols-2 gap-4" id="options-container">
+          <button class="tf-btn bg-emerald-700 hover:bg-emerald-600 p-6 rounded-lg text-xl font-bold transition-all border-2 border-transparent hover:border-emerald-400" data-value="true">
+            ✓ VERDADEIRO
+          </button>
+          <button class="tf-btn bg-red-700 hover:bg-red-600 p-6 rounded-lg text-xl font-bold transition-all border-2 border-transparent hover:border-red-400" data-value="false">
+            ✗ FALSO
+          </button>
+        </div>
+      `;
+    }
+
+    function renderOrderQuestion(question) {
+      const shuffled = [...question.items].sort(() => Math.random() - 0.5);
+      return `
+        <div class="space-y-2" id="order-container">
+          <p class="text-slate-400 mb-4">Arraste os itens para a ordem correta:</p>
+          ${shuffled.map((item, index) => `
+            <div class="order-item bg-slate-700 p-4 rounded-lg cursor-move flex items-center gap-3 transition-all hover:bg-slate-600" draggable="true" data-original="${question.items.indexOf(item)}">
+              <span class="text-slate-400">☰</span>
+              <span class="font-medium">${item}</span>
+            </div>
+          `).join('')}
+        </div>
+        <button id="confirm-order" class="mt-6 w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 py-4 rounded-lg font-bold text-lg transition-all">
+          CONFIRMAR ORDEM
+        </button>
+      `;
+    }
+
+    function renderMatchQuestion(question) {
+      const shuffledRight = [...question.pairs.map(p => p.right)].sort(() => Math.random() - 0.5);
+      return `
+        <div class="grid md:grid-cols-2 gap-6" id="match-container">
+          <div class="space-y-3">
+            <p class="text-emerald-400 font-semibold mb-2">Termos</p>
+            ${question.pairs.map((pair, index) => `
+              <div class="match-left bg-slate-700 p-4 rounded-lg cursor-pointer transition-all hover:bg-emerald-700/50 border-2 border-transparent" data-index="${index}">
+                ${pair.left}
+              </div>
+            `).join('')}
+          </div>
+          <div class="space-y-3">
+            <p class="text-cyan-400 font-semibold mb-2">Definições</p>
+            ${shuffledRight.map((right, index) => `
+              <div class="match-right bg-slate-700 p-4 rounded-lg cursor-pointer transition-all hover:bg-cyan-700/50 border-2 border-transparent" data-original="${question.pairs.findIndex(p => p.right === right)}" data-index="${index}">
+                ${right}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <button id="confirm-match" class="mt-6 w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 py-4 rounded-lg font-bold text-lg transition-all">
+          CONFIRMAR ASSOCIAÇÕES
+        </button>
+      `;
+    }
+
+    function setupQuestionListeners(question) {
+      switch (question.type) {
+        case 'multiple':
+        case 'scenario':
+          document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const selected = parseInt(btn.dataset.index);
+              checkAnswer(selected === question.correct, question);
+            });
+          });
+          break;
+
+        case 'truefalse':
+          document.querySelectorAll('.tf-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const selected = btn.dataset.value === 'true';
+              checkAnswer(selected === question.correct, question);
+            });
+          });
+          break;
+
+        case 'order':
+          setupDragAndDrop();
+          document.getElementById('confirm-order').addEventListener('click', () => {
+            const items = document.querySelectorAll('.order-item');
+            const currentOrder = Array.from(items).map(item => parseInt(item.dataset.original));
+            const isCorrect = currentOrder.every((val, idx) => val === question.correctOrder[idx]);
+            checkAnswer(isCorrect, question);
+          });
+          break;
+
+        case 'match':
+          setupMatchGame(question);
+          break;
+      }
+    }
+
+    function setupDragAndDrop() {
+      const container = document.getElementById('order-container');
+      const items = container.querySelectorAll('.order-item');
+      let draggedItem = null;
+      let touchStartY = 0;
+
+      items.forEach(item => {
+        // Desktop drag support
+        item.addEventListener('dragstart', (e) => {
+          draggedItem = item;
+          item.classList.add('opacity-50');
+        });
+
+        item.addEventListener('dragend', () => {
+          draggedItem.classList.remove('opacity-50');
+          draggedItem = null;
+        });
+
+        item.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          item.classList.add('bg-emerald-700/30');
+        });
+
+        item.addEventListener('dragleave', () => {
+          item.classList.remove('bg-emerald-700/30');
+        });
+
+        item.addEventListener('drop', (e) => {
+          e.preventDefault();
+          item.classList.remove('bg-emerald-700/30');
+          if (draggedItem && draggedItem !== item) {
+            const allItems = [...container.querySelectorAll('.order-item')];
+            const draggedIndex = allItems.indexOf(draggedItem);
+            const targetIndex = allItems.indexOf(item);
+            
+            if (draggedIndex < targetIndex) {
+              item.parentNode.insertBefore(draggedItem, item.nextSibling);
+            } else {
+              item.parentNode.insertBefore(draggedItem, item);
+            }
+          }
+        });
+
+        // Mobile touch support with move up/down buttons
+        item.addEventListener('touchstart', (e) => {
+          touchStartY = e.touches[0].clientY;
+          draggedItem = item;
+          item.classList.add('bg-emerald-700/50');
+        });
+
+        item.addEventListener('touchmove', (e) => {
+          e.preventDefault();
+        });
+
+        item.addEventListener('touchend', (e) => {
+          const touchEndY = e.changedTouches[0].clientY;
+          const diff = touchStartY - touchEndY;
+          
+          if (Math.abs(diff) > 30) {
+            const allItems = [...container.querySelectorAll('.order-item')];
+            const currentIndex = allItems.indexOf(draggedItem);
+            
+            if (diff > 0 && currentIndex < allItems.length - 1) {
+              // Swipe up = move down in list
+              container.insertBefore(allItems[currentIndex + 1], draggedItem);
+            } else if (diff < 0 && currentIndex > 0) {
+              // Swipe down = move up in list
+              container.insertBefore(draggedItem, allItems[currentIndex - 1]);
+            }
+          }
+          
+          draggedItem.classList.remove('bg-emerald-700/50');
+          draggedItem = null;
+        });
+      });
+
+      // Add mobile-friendly up/down buttons for each item
+      items.forEach((item, index) => {
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = 'md:hidden flex gap-2 absolute right-4 top-1/2 transform -translate-y-1/2';
+        
+        // Only show on mobile
+        if (window.innerWidth <= 768) {
+          const upBtn = document.createElement('button');
+          upBtn.className = 'bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded text-sm';
+          upBtn.textContent = '↑';
+          upBtn.onclick = (e) => {
+            e.stopPropagation();
+            const allItems = [...container.querySelectorAll('.order-item')];
+            const currentIndex = allItems.indexOf(item);
+            if (currentIndex > 0) {
+              container.insertBefore(item, allItems[currentIndex - 1]);
+            }
+          };
+          
+          const downBtn = document.createElement('button');
+          downBtn.className = 'bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded text-sm';
+          downBtn.textContent = '↓';
+          downBtn.onclick = (e) => {
+            e.stopPropagation();
+            const allItems = [...container.querySelectorAll('.order-item')];
+            const currentIndex = allItems.indexOf(item);
+            if (currentIndex < allItems.length - 1) {
+              container.insertBefore(allItems[currentIndex + 1], item);
+            }
+          };
+          
+          controlsDiv.appendChild(upBtn);
+          controlsDiv.appendChild(downBtn);
+          item.style.position = 'relative';
+          item.appendChild(controlsDiv);
+        }
+      });
+    }
+
+    let matchSelections = { left: null, right: null };
+    let matches = [];
+
+    function setupMatchGame(question) {
+      matchSelections = { left: null, right: null };
+      matches = [];
+
+      document.querySelectorAll('.match-left').forEach(item => {
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.match-left').forEach(i => i.classList.remove('border-emerald-400', 'bg-emerald-700/50'));
+          item.classList.add('border-emerald-400', 'bg-emerald-700/50');
+          matchSelections.left = parseInt(item.dataset.index);
+          tryMatch(question);
+        });
+      });
+
+      document.querySelectorAll('.match-right').forEach(item => {
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.match-right').forEach(i => i.classList.remove('border-cyan-400', 'bg-cyan-700/50'));
+          item.classList.add('border-cyan-400', 'bg-cyan-700/50');
+          matchSelections.right = parseInt(item.dataset.original);
+          tryMatch(question);
+        });
+      });
+
+      document.getElementById('confirm-match').addEventListener('click', () => {
+        const isCorrect = matches.length === question.pairs.length && 
+          matches.every(m => m.left === m.right);
+        checkAnswer(isCorrect, question);
+      });
+    }
+
+    function tryMatch(question) {
+      if (matchSelections.left !== null && matchSelections.right !== null) {
+        matches.push({ left: matchSelections.left, right: matchSelections.right });
+        
+        // Visual feedback
+        const leftItem = document.querySelector(`.match-left[data-index="${matchSelections.left}"]`);
+        const rightItem = document.querySelector(`.match-right[data-original="${matchSelections.right}"]`);
+        
+        if (matchSelections.left === matchSelections.right) {
+          leftItem.classList.add('bg-emerald-800', 'opacity-60');
+          rightItem.classList.add('bg-emerald-800', 'opacity-60');
+          leftItem.style.pointerEvents = 'none';
+          rightItem.style.pointerEvents = 'none';
+        }
+
+        // Reset selections
+        document.querySelectorAll('.match-left').forEach(i => i.classList.remove('border-emerald-400'));
+        document.querySelectorAll('.match-right').forEach(i => i.classList.remove('border-cyan-400'));
+        matchSelections = { left: null, right: null };
+      }
+    }
+
+    function checkAnswer(isCorrect, question) {
+      questionsAnswered.add(currentQuestionIndex);
+      
+      let points = 0;
+      if (isCorrect) {
+        points = Math.floor(currentChallenge.xpReward / currentChallenge.questions.length);
+        challengeScore += points;
+      }
+
+      const icon = isCorrect ? '✅' : '❌';
+      const title = isCorrect ? 'CORRETO!' : 'INCORRETO';
+      const pointsText = isCorrect ? `+${points} XP` : '+0 XP';
+
+      showResultModal(icon, title, question.explanation, pointsText);
+    }
+
+    function showResultModal(icon, title, message, points) {
+      document.getElementById('result-icon').textContent = icon;
+      document.getElementById('result-title').textContent = title;
+      document.getElementById('result-title').className = `font-orbitron text-2xl mb-2 ${icon === '✅' ? 'text-emerald-400' : icon === '❌' ? 'text-red-400' : 'text-yellow-400'}`;
+      document.getElementById('result-message').textContent = message;
+      document.getElementById('result-points').textContent = points;
+      document.getElementById('result-modal').classList.remove('hidden');
+    }
+
+    async function continueAfterResult() {
+      document.getElementById('result-modal').classList.add('hidden');
+      currentQuestionIndex++;
+
+      if (currentQuestionIndex >= currentChallenge.questions.length) {
+        await finishChallenge();
+      } else {
+        renderCurrentQuestion();
+      }
+    }
+
+    async function finishChallenge() {
+      // Calculate new stats
+      const newScore = (currentPlayer.total_score || 0) + challengeScore;
+      const newLevel = Math.floor(newScore / 1000) + 1;
+      const newChallengesCompleted = (currentPlayer.challenges_completed || 0) + 1;
+      
+      // Add badge for completing challenge
+      let badges = (currentPlayer.badges_earned || '').split(',').filter(b => b);
+      const badgesToAdd = [];
+
+      // Challenge-specific badge
+      if (!badges.includes(currentChallenge.id)) {
+        badges.push(currentChallenge.id);
+        badgesToAdd.push(currentChallenge.badge);
+      }
+
+      // First challenge badge
+      if (!badges.includes('first-challenge') && newChallengesCompleted === 1) {
+        badges.push('first-challenge');
+        badgesToAdd.push(allBadges.find(b => b.id === 'first-challenge'));
+      }
+
+      // Perfect score badge
+      if (challengeScore === currentChallenge.xpReward && !badges.includes('perfect-score')) {
+        badges.push('perfect-score');
+        badgesToAdd.push(allBadges.find(b => b.id === 'perfect-score'));
+      }
+
+      // Level 5 badge
+      if (newLevel >= 5 && !badges.includes('level-5')) {
+        badges.push('level-5');
+        badgesToAdd.push(allBadges.find(b => b.id === 'level-5'));
+      }
+
+      // All challenges badge
+      if (newChallengesCompleted >= challenges.length && !badges.includes('all-challenges')) {
+        badges.push('all-challenges');
+        badgesToAdd.push(allBadges.find(b => b.id === 'all-challenges'));
+      }
+
+      // Update player
+      currentPlayer.total_score = newScore;
+      currentPlayer.current_level = newLevel;
+      currentPlayer.challenges_completed = newChallengesCompleted;
+      currentPlayer.badges_earned = badges.join(',');
+
+      // Update in the array
+      const playerIndex = allPlayers.findIndex(p => p.player_name === currentPlayer.player_name);
+      if (playerIndex >= 0) {
+        allPlayers[playerIndex] = currentPlayer;
+      }
+
+      // Save to cloud (or localStorage as fallback)
+      await savePlayerToCloud(currentPlayer);
+      savePlayersToLocalStorage();
+
+      // Show badge modals
+      for (const badge of badgesToAdd) {
+        if (badge) {
+          await showBadgeEarned(badge);
+        }
+      }
+
+      // Return to challenge selection
+      document.getElementById('challenge-area').classList.add('hidden');
+      document.getElementById('challenge-selection').classList.remove('hidden');
+      document.getElementById('badges-section').classList.remove('hidden');
+      
+      updatePlayerDisplay();
+      renderChallengeSelection();
+    }
+
+    function showBadgeEarned(badge) {
+      return new Promise(resolve => {
+        document.getElementById('badge-earned-icon').textContent = badge.icon;
+        document.getElementById('badge-earned-name').textContent = badge.name;
+        document.getElementById('badge-earned-desc').textContent = badge.desc;
+        document.getElementById('badge-modal').classList.remove('hidden');
+        
+        const closeHandler = () => {
+          document.getElementById('badge-modal').classList.add('hidden');
+          document.getElementById('badge-continue').removeEventListener('click', closeHandler);
+          resolve();
+        };
+        
+        document.getElementById('badge-continue').addEventListener('click', closeHandler);
+      });
+    }
+
+    function closeBadgeModal() {
+      document.getElementById('badge-modal').classList.add('hidden');
+    }
+
+    function showLeaderboard() {
+      updateLeaderboard();
+      document.getElementById('leaderboard-modal').classList.remove('hidden');
+    }
+
+    function hideLeaderboard() {
+      document.getElementById('leaderboard-modal').classList.add('hidden');
+    }
+
+    function clearRanking() {
+      const btn = document.getElementById('clear-ranking-btn');
+      
+      // If already in confirm state, execute clear
+      if (btn.dataset.confirming === 'true') {
+        allPlayers = [];
+        savePlayersToLocalStorage();
+        btn.dataset.confirming = 'false';
+        btn.textContent = '🗑️ Limpar';
+        btn.classList.remove('bg-red-900', 'border-red-600');
+        btn.classList.add('text-red-400', 'hover:text-red-300');
+        updateLeaderboard();
+        hideLeaderboard();
+        showResultModal('🗑️', 'Ranking Limpo', 'Todos os dados foram removidos com sucesso!', '');
+        return;
+      }
+
+      // First click - ask for confirmation
+      btn.dataset.confirming = 'true';
+      btn.textContent = '✓ Confirmar?';
+      btn.classList.remove('text-red-400', 'hover:text-red-300');
+      btn.classList.add('bg-red-900', 'border-red-600');
+
+      // Reset after 3 seconds if not clicked
+      setTimeout(() => {
+        if (btn.dataset.confirming === 'true') {
+          btn.dataset.confirming = 'false';
+          btn.textContent = '🗑️ Limpar';
+          btn.classList.remove('bg-red-900', 'border-red-600');
+          btn.classList.add('text-red-400', 'hover:text-red-300');
+        }
+      }, 3000);
+    }
+
+    function updateLeaderboard() {
+      const list = document.getElementById('leaderboard-list');
+      const sorted = [...allPlayers].sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
+
+      if (sorted.length === 0) {
+        list.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>';
+        return;
+      }
+
+      list.innerHTML = sorted.slice(0, 10).map((player, index) => {
+        const medals = ['🥇', '🥈', '🥉'];
+        const medal = medals[index] || `#${index + 1}`;
+        const isCurrentPlayer = currentPlayer && player.player_name === currentPlayer.player_name;
+        
+        return `
+          <div class="flex items-center gap-4 p-4 rounded-lg ${isCurrentPlayer ? 'bg-emerald-900/30 border border-emerald-500/50' : 'bg-slate-800/50'}">
+            <span class="text-2xl w-10 text-center">${medal}</span>
+            <div class="flex-1">
+              <p class="font-bold ${isCurrentPlayer ? 'text-emerald-400' : 'text-white'}">${player.player_name}</p>
+              <p class="text-sm text-slate-400">Nível ${player.current_level || 1} • ${player.challenges_completed || 0} desafios</p>
+            </div>
+            <div class="text-right">
+              <p class="font-orbitron text-xl text-cyan-400">${player.total_score || 0}</p>
+              <p class="text-xs text-slate-500">XP</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function returnToMenu() {
+      document.getElementById('game-dashboard').classList.add('hidden');
+      document.getElementById('challenge-area').classList.add('hidden');
+      document.getElementById('challenge-selection').classList.remove('hidden');
+      document.getElementById('badges-section').classList.remove('hidden');
+      document.getElementById('main-menu').classList.remove('hidden');
+      
+      currentChallenge = null;
+      currentQuestionIndex = 0;
+    }
+
+    // Initialize the app
+    initializeApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d7d727796085c96',t:'MTc3Mjc1OTA3NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
