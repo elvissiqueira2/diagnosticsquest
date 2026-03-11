@@ -1778,7 +1778,87 @@ updateLeaderboard = function () {
 };
 </script>
 ``
+  <script>
+// ====== FALLBACKS de sincronização para garantir save no Supabase ======
+// Reaproveita as funções apiPost/apiGet e SUPABASE_BASE já definidas no bloco anterior.
+
+// 1) Função de sincronização centralizada
+async function syncPlayerNow(reason = '') {
+  try {
+    if (!window.currentPlayer || !window.currentPlayer.player_name) return;
+    await apiPost('/save-player', {
+      player_name: window.currentPlayer.player_name,
+      total_score: window.currentPlayer.total_score || 0,
+      current_level: window.currentPlayer.current_level || 1,
+      badges_earned: window.currentPlayer.badges_earned || '',
+      challenges_completed: window.currentPlayer.challenges_completed || 0
+    });
+    // console.log('[sync ok]', reason);
+  } catch (e) {
+    console.warn('[sync failed]', reason, e);
+  }
+}
+
+// 2) Gancho no botão "Continuar" do modal de resultado (fecha a etapa do desafio)
+(function hookResultContinue() {
+  // tenta agora e também re-tenta quando o DOM mudar (para pegar o botão se ele for recriado)
+  function attach() {
+    const btn = document.getElementById('result-continue');
+    if (!btn) return false;
+    if (btn.__syncHooked) return true;
+    btn.addEventListener('click', () => {
+      // dá um pequeno tempo para o jogo atualizar currentPlayer e só então sincroniza
+      setTimeout(() => syncPlayerNow('after-result-continue'), 600);
+    });
+    btn.__syncHooked = true;
+    return true;
+  }
+  // tenta imediatamente
+  if (!attach()) {
+    // re-tenta algumas vezes nos próximos segundos (caso o botão seja criado depois)
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if (attach() || tries > 10) clearInterval(iv);
+    }, 500);
+  }
+})();
+
+// 3) Gancho no botão "RANKING": sincroniza antes de abrir o modal, depois lê o leaderboard
+(function hookLeaderboardButton() {
+  function attach() {
+    const btn = document.getElementById('leaderboard-btn');
+    if (!btn) return false;
+    if (btn.__syncHooked) return true;
+    const originalOnClick = btn.onclick;
+    btn.onclick = async (ev) => {
+      try {
+        await syncPlayerNow('before-leaderboard');
+      } catch (e) { /* silencia erro de sync */ }
+      // chama o comportamento original (abrir modal de ranking)
+      if (typeof originalOnClick === 'function') {
+        return originalOnClick.call(btn, ev);
+      }
+      // fallback: se existir função global para abrir ranking
+      if (typeof window.showLeaderboard === 'function') {
+        return window.showLeaderboard();
+      }
+    };
+    btn.__syncHooked = true;
+    return true;
+  }
+  // tenta imediatamente e re-tenta por alguns segundos
+  if (!attach()) {
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if (attach() || tries > 10) clearInterval(iv);
+    }, 500);
+  }
+})();
+</script>
  </body>
 
 </html>
+
 
