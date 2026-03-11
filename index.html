@@ -1943,10 +1943,45 @@ clearRanking = function(){
   });
 })();
 </script>
+<script>
+// Gatilho direto: criar/atualizar jogador no Supabase ao clicar "INICIAR MISSÃO"
+(function forceCreateOnStart(){
+  const btn = document.getElementById('start-game-btn');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    try {
+      const nameInput  = document.getElementById('player-name-input');
+      const classInput = document.getElementById('class-group-input');
+      const player_name = (nameInput?.value || '').trim();
+      const class_group = (classInput?.value || '').trim();
+      if (!player_name) return;
 
+      // Usa a mesma base das suas Edge Functions (já definida no arquivo)
+      const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+      await fetch(`${SUPABASE_BASE}/save-player`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_name,
+          total_score: 0,
+          current_level: 1,
+          badges_earned: '',
+          challenges_completed: 0,
+          class_group
+        })
+      });
+      // não mostra nada na tela — só garante o registro no banco
+    } catch(e) {
+      // silencioso
+    }
+  }, { capture: true });
+})();
+</script>
 </body>
 
 </html>
+
 
 
 
