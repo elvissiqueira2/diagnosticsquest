@@ -173,7 +173,11 @@
     </div>
     <div class="glass-effect rounded-2xl p-6 sm:p-8 w-full max-w-md animate-pulse-glow">
      <div class="mb-6"><label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">IDENTIFICAÇÃO DO TÉCNICO</label> <input type="text" id="player-name-input" placeholder="Seu nome..." class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">
-     </div><button id="start-game-btn" class="btn-cyber w-full bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-bold py-3 rounded-lg text-base sm:text-lg font-orbitron transition-all"> 🚀 INICIAR MISSÃO </button> <button id="leaderboard-btn" class="btn-cyber w-full mt-4 bg-slate-700 text-emerald-400 font-bold py-2 rounded-lg text-sm sm:text-base transition-all"> 🏆 RANKING </button>
+     </div><!-- NOVO CAMPO: TURMA -->
+<div class="mb-2">
+  <label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">TURMA</label>
+  <input type="text" id="class-group-input" placeholder="Ex.: TI-101" class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">
+</div><button id="start-game-btn" class="btn-cyber w-full bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-bold py-3 rounded-lg text-base sm:text-lg font-orbitron transition-all"> 🚀 INICIAR MISSÃO </button> <button id="leaderboard-btn" class="btn-cyber w-full mt-4 bg-slate-700 text-emerald-400 font-bold py-2 rounded-lg text-sm sm:text-base transition-all"> 🏆 RANKING </button>
     </div>
     <div class="mt-8 text-center text-slate-500">
      <p>AULA 16 — Teste e Diagnóstico de Hardware</p>
@@ -1939,8 +1943,96 @@ clearRanking = function(){
   });
 })();
 </script>
+<script>
+// Gatilho direto: criar/atualizar jogador no Supabase ao clicar "INICIAR MISSÃO"
+(function forceCreateOnStart(){
+  const btn = document.getElementById('start-game-btn');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    try {
+      const nameInput  = document.getElementById('player-name-input');
+      const classInput = document.getElementById('class-group-input');
+      const player_name = (nameInput?.value || '').trim();
+      const class_group = (classInput?.value || '').trim();
+      if (!player_name) return;
 
+      // Usa a mesma base das suas Edge Functions (já definida no arquivo)
+      const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+      await fetch(`${SUPABASE_BASE}/save-player`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_name,
+          total_score: 0,
+          current_level: 1,
+          badges_earned: '',
+          challenges_completed: 0,
+          class_group
+        })
+      });
+      // não mostra nada na tela — só garante o registro no banco
+    } catch(e) {
+      // silencioso
+    }
+  }, { capture: true });
+})();
+</script>
+  <script>
+// Intercepta o botão "Limpar" para chamar a Edge Function clear-ranking (e bloqueia o handler antigo)
+(function interceptClearButton(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  function attach(){
+    const btn = document.getElementById('clear-ranking-btn');
+    if (!btn || btn.__supabaseHook) return !!btn;
+
+    btn.addEventListener('click', async (ev) => {
+      try {
+        // Bloqueia o listener antigo (local) e garante que só este rode
+        ev.stopImmediatePropagation();
+        ev.preventDefault();
+
+        const key = prompt('Para limpar o ranking geral, digite a CHAVE DE ADMINISTRADOR (ou deixe vazio):') || '';
+
+        const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, {
+          method: 'POST',
+          headers: { 'x-admin-key': key }
+        });
+
+        if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
+
+        // Feedback e atualização de UI
+        if (typeof hideLeaderboard === 'function') hideLeaderboard();
+        if (typeof updateLeaderboard === 'function') updateLeaderboard();
+        if (typeof showResultModal === 'function') {
+          showResultModal('🗑️','Ranking Limpo','Todos os dados foram removidos do banco.','');
+        }
+      } catch (e) {
+        if (typeof showResultModal === 'function') {
+          showResultModal('⚠️','Ação negada','Chave inválida ou erro no servidor.','');
+        }
+        console.warn('clear-ranking erro', e);
+      }
+    }, { capture: true }); // <- captura o clique antes do handler antigo
+
+    btn.__supabaseHook = true;
+    return true;
+  }
+
+  if (!attach()) {
+    // Se o botão ainda não existe (UI ainda montando), tentar por alguns instantes
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if (attach() || tries > 10) clearInterval(iv);
+    }, 500);
+  }
+})();
+</script>
+  
 </body>
 
 </html>
+
 
