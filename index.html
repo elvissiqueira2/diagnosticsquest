@@ -2113,10 +2113,24 @@ clearRanking = function(){
   }
 })();
 </script>
-  
+  <script>
+// 🔧 Bypass de carregamento: se algo der erro na init, abre o menu assim mesmo
+(function forceShowMenu(){
+  function show() {
+    document.getElementById('loading-screen')?.classList.add('hidden');
+    document.getElementById('main-menu')?.classList.remove('hidden');
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(show, 600));
+  } else {
+    setTimeout(show, 600);
+  }
+})();
+</script>
 </body>
 
 </html>
+
 
 
 
