@@ -2030,9 +2030,34 @@ clearRanking = function(){
   }
 })();
 </script>
-  
+  <script>
+// Substitui o comportamento do botão "Limpar" para NÃO pedir chave (enquanto estiver sem proteção)
+(function noKeyClear(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+  const btn = document.getElementById('clear-ranking-btn');
+  if (!btn) return;
+  btn.addEventListener('click', async (ev) => {
+    try {
+      ev.stopImmediatePropagation?.(); ev.preventDefault?.();
+      const r = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method:'POST' });
+      if (!r.ok) throw new Error('Erro ao limpar');
+      if (typeof hideLeaderboard === 'function') hideLeaderboard();
+      if (typeof updateLeaderboard === 'function') updateLeaderboard();
+      if (typeof showResultModal === 'function') {
+        showResultModal('🗑️','Ranking Limpo','Dados removidos do banco com sucesso!','');
+      }
+    } catch (e) {
+      if (typeof showResultModal === 'function') {
+        showResultModal('⚠️','Falha ao limpar','Tente novamente em alguns segundos.','');
+      }
+      console.warn('clear-ranking', e);
+    }
+  }, { capture:true });
+})();
+</script>
 </body>
 
 </html>
+
 
 
