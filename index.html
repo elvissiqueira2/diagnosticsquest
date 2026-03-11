@@ -1673,18 +1673,17 @@
   </script>
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d7d727796085c96',t:'MTc3Mjc1OTA3NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
  <script>
-// === Overrides para usar ranking ONLINE via Netlify Functions (Supabase) ===
-// Caminho base das APIs de Functions no Netlify
-const API_BASE = '/.netlify/functions';
+// === Overrides para usar ranking ONLINE via Supabase Edge Functions ===
+// Cole aqui a SUA URL base do Supabase (sem barra no final):
+const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
 
-// Helpers de chamada
 async function apiGet(path) {
-  const res = await fetch(`${API_BASE}${path}`);
+  const res = await fetch(`${SUPABASE_BASE}${path}`);
   if (!res.ok) throw new Error('API GET failed');
   return res.json();
 }
 async function apiPost(path, data, headers = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${SUPABASE_BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(data || {})
@@ -1693,13 +1692,10 @@ async function apiPost(path, data, headers = {}) {
   return res.json();
 }
 
-// Guardar referência às funções originais (se quiser voltar atrás)
-const __startGame = typeof startGame === 'function' ? startGame : null;
+// Guarda a função original (se existir) para manter o fluxo do jogo
 const __finishChallenge = typeof finishChallenge === 'function' ? finishChallenge : null;
-const __updateLeaderboard = typeof updateLeaderboard === 'function' ? updateLeaderboard : null;
-const __clearRanking = typeof clearRanking === 'function' ? clearRanking : null;
 
-// Sobrescreve o startGame para carregar/criar jogador no Supabase
+// START GAME: cria/carrega jogador no Supabase
 startGame = async function () {
   const nameInput = document.getElementById('player-name-input');
   const playerName = nameInput?.value?.trim();
@@ -1709,13 +1705,10 @@ startGame = async function () {
     return;
   }
   try {
-    // Tenta buscar o jogador
     const res = await apiGet(`/get-player?name=${encodeURIComponent(playerName)}`);
     if (res && res.player) {
-      // Jogador já existe no banco
       window.currentPlayer = res.player;
     } else {
-      // Cria registro inicial no banco
       window.currentPlayer = {
         player_name: playerName,
         total_score: 0,
@@ -1727,24 +1720,15 @@ startGame = async function () {
     }
   } catch (e) {
     console.warn('API indisponível, iniciando local:', e);
-    window.currentPlayer = {
-      player_name: playerName,
-      total_score: 0,
-      current_level: 1,
-      badges_earned: '',
-      challenges_completed: 0
-    };
+    window.currentPlayer = { player_name: playerName, total_score: 0, current_level: 1, badges_earned: '', challenges_completed: 0 };
   }
-  // Continua o fluxo do jogo
   const showGameDashboard = window.showGameDashboard || function(){};
   showGameDashboard();
 };
 
-// Encapsula o finishChallenge para sincronizar no banco
+// FINISH CHALLENGE: sincroniza no Supabase ao finalizar
 finishChallenge = async function () {
-  if (__finishChallenge) {
-    await __finishChallenge(); // isto atualiza window.currentPlayer conforme seu código original
-  }
+  if (__finishChallenge) await __finishChallenge();
   try {
     await apiPost('/save-player', {
       player_name: window.currentPlayer.player_name,
@@ -1758,7 +1742,7 @@ finishChallenge = async function () {
   }
 };
 
-// Sobrescreve o updateLeaderboard para buscar no banco
+// LEADERBOARD: busca do Supabase
 updateLeaderboard = function () {
   (async () => {
     const list = document.getElementById('leaderboard-list');
@@ -1784,8 +1768,7 @@ updateLeaderboard = function () {
      <p class="font-orbitron text-xl text-cyan-400">${player.total_score || 0}</p>
      <p class="text-xs text-slate-500">XP</p>
    </div>
- </div>
-        `;
+ </div>`;
       }).join('');
     } catch (e) {
       console.error('Erro ao carregar ranking online', e);
@@ -1793,23 +1776,9 @@ updateLeaderboard = function () {
     }
   })();
 };
-
-// Sobrescreve o clearRanking para usar ADMIN_KEY
-clearRanking = function () {
-  (async () => {
-    const key = prompt('Para limpar o ranking geral, digite a CHAVE DE ADMINISTRADOR:');
-    if (!key) return;
-    const res = await fetch('/.netlify/functions/clear-ranking', { method: 'POST', headers: { 'x-admin-key': key } });
-    if (res.ok) {
-      hideLeaderboard && hideLeaderboard();
-      showResultModal && showResultModal('🗑️', 'Ranking Limpo', 'Todos os dados foram removidos com sucesso!', '');
-    } else {
-      showResultModal && showResultModal('⚠️', 'Ação negada', 'Chave inválida ou erro no servidor.', '');
-    }
-  })();
-};
-// === FIM dos overrides ===
 </script>
+``
  </body>
 
 </html>
+
