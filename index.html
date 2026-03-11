@@ -173,11 +173,7 @@
     </div>
     <div class="glass-effect rounded-2xl p-6 sm:p-8 w-full max-w-md animate-pulse-glow">
      <div class="mb-6"><label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">IDENTIFICAÇÃO DO TÉCNICO</label> <input type="text" id="player-name-input" placeholder="Seu nome..." class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">
-     </div><!-- NOVO CAMPO: TURMA -->
-<div class="mb-2">
-  <label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">TURMA</label>
-  <input type="text" id="class-group-input" placeholder="Ex.: TI101" class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">
-</div><button id="start-game-btn" class="btn-cyber w-full bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-bold py-3 rounded-lg text-base sm:text-lg font-orbitron transition-all"> 🚀 INICIAR MISSÃO </button> <button id="leaderboard-btn" class="btn-cyber w-full mt-4 bg-slate-700 text-emerald-400 font-bold py-2 rounded-lg text-sm sm:text-base transition-all"> 🏆 RANKING </button>
+     </div><button id="start-game-btn" class="btn-cyber w-full bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-bold py-3 rounded-lg text-base sm:text-lg font-orbitron transition-all"> 🚀 INICIAR MISSÃO </button> <button id="leaderboard-btn" class="btn-cyber w-full mt-4 bg-slate-700 text-emerald-400 font-bold py-2 rounded-lg text-sm sm:text-base transition-all"> 🏆 RANKING </button>
     </div>
     <div class="mt-8 text-center text-slate-500">
      <p>AULA 16 — Teste e Diagnóstico de Hardware</p>
@@ -1456,104 +1452,22 @@
         document.querySelectorAll('.match-right').forEach(i => i.classList.remove('border-cyan-400'));
         matchSelections = { left: null, right: null };
       }
-// SUBSTITUIR APENAS O CORPO DA FUNÇÃO EXISTENTE
-async function checkAnswer(isCorrect, question) {
-  // Marca que esta questão foi respondida
-  questionsAnswered.add(currentQuestionIndex);
-
-  // Pontos que esta questão vale
-  let points = 0;
-  if (isCorrect) {
-    points = Math.floor(currentChallenge.xpReward / currentChallenge.questions.length);
-    // Soma ao placar do desafio (como já era)
-    challengeScore += points;
-
-    // >>> NOVO: somar imediatamente ao jogador <<<
-    currentPlayer.total_score = (currentPlayer.total_score || 0) + points;
-
-    // >>> NOVO: recalcular nível incrementalmente <<<
-    const newLevel = Math.floor((currentPlayer.total_score || 0) / 1000) + 1;
-    currentPlayer.current_level = Math.max(currentPlayer.current_level || 1, newLevel);
-
-    // >>> NOVO: atualizar UI (placar, nível, barra/XP) <<<
-    try {
-      document.getElementById('score-display').textContent = currentPlayer.total_score || 0;
-      document.getElementById('level-display').textContent = currentPlayer.current_level || 1;
-      const xpForLevel = (currentPlayer.total_score || 0) % 1000;
-      document.getElementById('xp-display').textContent = `${xpForLevel}/1000 XP`;
-      document.getElementById('xp-bar').style.width = `${(xpForLevel / 1000) * 100}%`;
-    } catch (_) {}
-
-    // >>> NOVO: salvar no Supabase a cada questão <<<
-    try {
-      await apiPost('/save-player', {
-        player_name: currentPlayer.player_name,
-        total_score: currentPlayer.total_score,
-        current_level: currentPlayer.current_level,
-        badges_earned: currentPlayer.badges_earned || '',
-        // challenges_completed mantém a soma no final do módulo (finishChallenge)
-        challenges_completed: currentPlayer.challenges_completed || 0,
-        class_group: currentPlayer.class_group || ''
-      });
-    } catch (e) {
-      console.warn('save-player (por questão) falhou', e);
     }
-  }
 
-  // UI do resultado (como já era)
-  const icon      = isCorrect ? '✅' : '❌';
-  const title     = isCorrect ? 'CORRETO!' : 'INCORRETO';
-  const pointsTxt = isCorrect ? `+${points} XP` : '+0 XP';
-  showResultModal(icon, title, question.explanation, pointsTxt);
-}async function checkAnswer(isCorrect, question) {
-  // Marca que esta questão foi respondida
-  questionsAnswered.add(currentQuestionIndex);
+    function checkAnswer(isCorrect, question) {
+      questionsAnswered.add(currentQuestionIndex);
+      
+      let points = 0;
+      if (isCorrect) {
+        points = Math.floor(currentChallenge.xpReward / currentChallenge.questions.length);
+        challengeScore += points;
+      }
 
-  // Pontos que esta questão vale (divisão proporcional do xpReward do desafio)
-  let points = 0;
-  if (isCorrect) {
-    points = Math.floor(currentChallenge.xpReward / currentChallenge.questions.length);
-    // Soma ao placar do desafio (como já era)
-    challengeScore += points;
+      const icon = isCorrect ? '✅' : '❌';
+      const title = isCorrect ? 'CORRETO!' : 'INCORRETO';
+      const pointsText = isCorrect ? `+${points} XP` : '+0 XP';
 
-    // 🔥 NOVO: soma imediatamente ao placar do jogador
-    currentPlayer.total_score = (currentPlayer.total_score || 0) + points;
-
-    // 🔥 NOVO: recalcula nível incrementalmente
-    const newLevel = Math.floor((currentPlayer.total_score || 0) / 1000) + 1;
-    currentPlayer.current_level = Math.max(currentPlayer.current_level || 1, newLevel);
-
-    // 🔥 NOVO: atualiza UI (placar, nível, barra/XP)
-    try {
-      document.getElementById('score-display').textContent = currentPlayer.total_score || 0;
-      document.getElementById('level-display').textContent = currentPlayer.current_level || 1;
-      const xpForLevel = (currentPlayer.total_score || 0) % 1000;
-      document.getElementById('xp-display').textContent = `${xpForLevel}/1000 XP`;
-      document.getElementById('xp-bar').style.width = `${(xpForLevel / 1000) * 100}%`;
-    } catch (_) {}
-    
-    // 🔥 NOVO: salva no Supabase imediatamente
-    try {
-      await apiPost('/save-player', {
-        player_name: currentPlayer.player_name,
-        total_score: currentPlayer.total_score,
-        current_level: currentPlayer.current_level,
-        badges_earned: currentPlayer.badges_earned || '',
-        challenges_completed: currentPlayer.challenges_completed || 0, // continua somando apenas no fim
-        class_group: currentPlayer.class_group || ''
-      });
-    } catch (e) {
-      console.warn('save-player (por questão) falhou', e);
-    }
-  }
-
-  // Monta UI do resultado (como já era)
-  const icon      = isCorrect ? '✅' : '❌';
-  const title     = isCorrect ? 'CORRETO!' : 'INCORRETO';
-  const pointsTxt = isCorrect ? `+${points} XP` : '+0 XP';
-  showResultModal(icon, title, question.explanation, pointsTxt);
-}
-</script>
+      showResultModal(icon, title, question.explanation, pointsText);
     }
 
     function showResultModal(icon, title, message, points) {
@@ -2025,164 +1939,8 @@ clearRanking = function(){
   });
 })();
 </script>
-<script>
-// Gatilho direto: criar/atualizar jogador no Supabase ao clicar "INICIAR MISSÃO"
-(function forceCreateOnStart(){
-  const btn = document.getElementById('start-game-btn');
-  if (!btn) return;
-  btn.addEventListener('click', async () => {
-    try {
-      const nameInput  = document.getElementById('player-name-input');
-      const classInput = document.getElementById('class-group-input');
-      const player_name = (nameInput?.value || '').trim();
-      const class_group = (classInput?.value || '').trim();
-      if (!player_name) return;
 
-      // Usa a mesma base das suas Edge Functions (já definida no arquivo)
-      const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-
-      await fetch(`${SUPABASE_BASE}/save-player`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          player_name,
-          total_score: 0,
-          current_level: 1,
-          badges_earned: '',
-          challenges_completed: 0,
-          class_group
-        })
-      });
-      // não mostra nada na tela — só garante o registro no banco
-    } catch(e) {
-      // silencioso
-    }
-  }, { capture: true });
-})();
-</script>
-
-  <script>
-// Intercepta o botão "Limpar" para chamar a Edge Function clear-ranking (e bloqueia o handler antigo)
-(function interceptClearButton(){
-  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-
-  function attach(){
-    const btn = document.getElementById('clear-ranking-btn');
-    if (!btn || btn.__supabaseHook) return !!btn;
-
-    btn.addEventListener('click', async (ev) => {
-      try {
-        // Bloqueia o listener antigo (local) e garante que só este rode
-        ev.stopImmediatePropagation();
-        ev.preventDefault();
-
-        const key = prompt('Para limpar o ranking geral, digite a CHAVE DE ADMINISTRADOR (ou deixe vazio):') || '';
-
-        const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, {
-          method: 'POST',
-          headers: { 'x-admin-key': key }
-        });
-
-        if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
-
-        // Feedback e atualização de UI
-        if (typeof hideLeaderboard === 'function') hideLeaderboard();
-        if (typeof updateLeaderboard === 'function') updateLeaderboard();
-        if (typeof showResultModal === 'function') {
-          showResultModal('🗑️','Ranking Limpo','Todos os dados foram removidos do banco.','');
-        }
-      } catch (e) {
-        if (typeof showResultModal === 'function') {
-          showResultModal('⚠️','Ação negada','Chave inválida ou erro no servidor.','');
-        }
-        console.warn('clear-ranking erro', e);
-      }
-    }, { capture: true }); // <- captura o clique antes do handler antigo
-
-    btn.__supabaseHook = true;
-    return true;
-  }
-
-  if (!attach()) {
-    // Se o botão ainda não existe (UI ainda montando), tentar por alguns instantes
-    let tries = 0;
-    const iv = setInterval(() => {
-      tries++;
-      if (attach() || tries > 10) clearInterval(iv);
-    }, 500);
-  }
-})();
-</script>
-  <script>
-// 🔧 Bypass de carregamento: se algo der erro na init, abre o menu assim mesmo
-(function forceShowMenu(){
-  function show() {
-    document.getElementById('loading-screen')?.classList.add('hidden');
-    document.getElementById('main-menu')?.classList.remove('hidden');
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(show, 600));
-  } else {
-    setTimeout(show, 600);
-  }
-})();
-</script>
-  <script>
-// 🧲 Observa quando o placar na tela muda e salva no Supabase automaticamente
-(function watchScoreAndAutosave(){
-  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-  const scoreEl = document.getElementById('score-display');
-  if (!scoreEl) return;
-
-  let lastSig = null;
-  let timer;
-
-  async function saveNow(reason='observer'){
-    try {
-      const p = window.currentPlayer;
-      if (!p || !p.player_name) return;
-
-      // Assumimos que a UI já atualizou p.total_score quando o score-display mudou
-      const sig = [p.player_name, p.total_score, p.current_level, p.challenges_completed, p.badges_earned, p.class_group||''].join('|');
-      if (sig === lastSig) return;
-
-      await fetch(`${SUPABASE_BASE}/save-player`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          player_name: p.player_name,
-          total_score: p.total_score || 0,
-          current_level: p.current_level || 1,
-          badges_earned: p.badges_earned || '',
-          challenges_completed: p.challenges_completed || 0,
-          class_group: p.class_group || ''
-        })
-      });
-      lastSig = sig;
-      // console.log('autosave', reason, lastSig);
-    } catch(e) { /* silencioso */ }
-  }
-
-  const mo = new MutationObserver(() => {
-    // debounce 400ms para acumular múltiplas mudanças
-    clearTimeout(timer);
-    timer = setTimeout(() => saveNow('mutation'), 400);
-  });
-  mo.observe(scoreEl, { subtree:true, childList:true, characterData:true });
-
-  // fallback: salva também a cada 5s
-  setInterval(() => saveNow('interval'), 5000);
-})();
-</script>
 </body>
 
 </html>
-
-
-
-
-
-
-
-
 
