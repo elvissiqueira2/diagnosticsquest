@@ -8,7 +8,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Hardware Diagnostics Quest</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="/_sdk/element_sdk.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Rajdhani:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
@@ -157,8 +156,7 @@
     }
   </style>
   <style>body { box-sizing: border-box; }</style>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
- </head>
+  </head>
  <body class="h-full bg-slate-900 text-white font-rajdhani overflow-auto">
   <div id="app" class="min-h-full w-full circuit-pattern"><!-- Loading Screen -->
    <div id="loading-screen" class="min-h-full flex items-center justify-center">
@@ -1672,7 +1670,6 @@
     // Initialize the app
     initializeApp();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d7d727796085c96',t:'MTc3Mjc1OTA3NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
  <script>
 // === Overrides para usar ranking ONLINE via Supabase Edge Functions ===
 // Cole aqui a SUA URL base do Supabase (sem barra no final):
@@ -1778,152 +1775,172 @@ updateLeaderboard = function () {
   })();
 };
 </script>
-``
-   <!-- ====== SUPABASE INTEGRAÇÃO + TURMA + RANKING ONLINE ====== -->
+
+ 
 <script>
-  // 0) URL base das suas Edge Functions (sem barra no fim)
-  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+// ===== SUPABASE INTEGRAÇÃO + TURMA + RANKING ONLINE =====
+const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
 
-  // 1) Helpers HTTP
-  async function apiGet(path) {
-    const res = await fetch(`${SUPABASE_BASE}${path}`);
-    if (!res.ok) throw new Error('API GET failed');
-    return res.json();
-  }
-  async function apiPost(path, data, headers = {}) {
-    const res = await fetch(`${SUPABASE_BASE}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...headers },
-      body: JSON.stringify(data || {})
+async function apiGet(path) {
+  const res = await fetch(`${SUPABASE_BASE}${path}`);
+  if (!res.ok) throw new Error('API GET failed');
+  return res.json();
+}
+async function apiPost(path, data, headers = {}) {
+  const res = await fetch(`${SUPABASE_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data || {})
+  });
+  if (!res.ok) throw new Error('API POST failed');
+  return res.json();
+}
+
+// Injeta campo de TURMA via JS para não depender do HTML original
+(function injectClassGroupField(){
+  const parent = document.querySelector('#main-menu .glass-effect');
+  if (!parent || document.getElementById('class-group-input')) return;
+  const div = document.createElement('div');
+  div.className = 'mb-2';
+  div.innerHTML = `\n    <label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">TURMA</label>\n    <input type="text" id="class-group-input" placeholder="Ex.: T-101" class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">\n  `;
+  const nameBlock = parent.querySelector('.mb-6');
+  if (nameBlock) nameBlock.after(div); else parent.appendChild(div);
+})();
+
+// Direciona a "nuvem" para Supabase
+window.savePlayerToCloud = async function(player){
+  try {
+    await apiPost('/save-player', {
+      player_name: player.player_name,
+      total_score: player.total_score || 0,
+      current_level: player.current_level || 1,
+      badges_earned: player.badges_earned || '',
+      challenges_completed: player.challenges_completed || 0,
+      class_group: player.class_group || ''
     });
-    if (!res.ok) throw new Error('API POST failed');
-    return res.json();
+  } catch(e){ console.warn('[savePlayerToCloud] falhou', e); }
+  try { savePlayersToLocalStorage && savePlayersToLocalStorage(); } catch {}
+};
+
+// Overrides principais
+const __finishChallenge = (typeof finishChallenge === 'function') ? finishChallenge : null;
+
+startGame = async function(){
+  const nameInput = document.getElementById('player-name-input');
+  const classInput = document.getElementById('class-group-input');
+  const playerName = nameInput?.value?.trim();
+  const classGroup = classInput?.value?.trim() || '';
+  if (!playerName){
+    nameInput?.classList?.add('animate-shake','border-red-500');
+    setTimeout(()=>nameInput?.classList?.remove('animate-shake','border-red-500'),500);
+    return;
   }
-
-  // 2) Injeta o campo TURMA na tela de login (logo abaixo do "Seu nome...")
-  (function injectClassGroupField(){
-    const formBox = document.querySelector('#main-menu .glass-effect .mb-6');
-    if (!formBox || document.getElementById('class-group-input')) return;
-    const wrap = document.createElement('div');
-    wrap.className = 'mb-2';
-    wrap.innerHTML = `
-      <label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">TURMA</label>
-      <input type="text" id="class-group-input" placeholder="Ex.: T-101" class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">
-    `;
-    formBox.after(wrap);
-  })();
-
-  // 3) “salvar na nuvem” = Supabase
-  window.savePlayerToCloud = async function(player) {
-    try {
-      await apiPost('/save-player', {
-        player_name: player.player_name,
-        total_score: player.total_score || 0,
-        current_level: player.current_level || 1,
-        badges_earned: player.badges_earned || '',
-        challenges_completed: player.challenges_completed || 0,
-        class_group: player.class_group || '' // TURMA
-      });
-    } catch (e) {
-      console.warn('[savePlayerToCloud] falhou', e);
-    }
-    try { savePlayersToLocalStorage && savePlayersToLocalStorage(); } catch {}
-  };
-
-  // 4) Overrides do fluxo principal
-  const __finishChallenge = (typeof finishChallenge === 'function') ? finishChallenge : null;
-
-  // START GAME: lê nome + TURMA, carrega/cria no Supabase
-  startGame = async function () {
-    const nameInput  = document.getElementById('player-name-input');
-    const classInput = document.getElementById('class-group-input');
-    const playerName = nameInput?.value?.trim();
-    const classGroup = classInput?.value?.trim() || '';
-
-    if (!playerName) {
-      nameInput?.classList?.add('animate-shake', 'border-red-500');
-      setTimeout(() => nameInput?.classList?.remove('animate-shake', 'border-red-500'), 500);
-      return;
-    }
-
-    try {
-      const res = await apiGet(`/get-player?name=${encodeURIComponent(playerName)}`);
-      if (res && res.player) {
-        window.currentPlayer = res.player;
-      } else {
-        window.currentPlayer = {
-          player_name: playerName,
-          total_score: 0,
-          current_level: 1,
-          badges_earned: '',
-          challenges_completed: 0,
-          class_group: classGroup // TURMA
-        };
-        try { await apiPost('/save-player', window.currentPlayer); } catch (e) { console.warn('Falha ao criar jogador online:', e); }
-      }
-    } catch (e) {
-      console.warn('API indisponível, iniciando local:', e);
+  try{
+    const res = await apiGet(`/get-player?name=${encodeURIComponent(playerName)}`);
+    if (res && res.player){
+      window.currentPlayer = res.player;
+    } else {
       window.currentPlayer = { player_name: playerName, total_score: 0, current_level: 1, badges_earned: '', challenges_completed: 0, class_group: classGroup };
+      try { await apiPost('/save-player', window.currentPlayer); } catch(e){ console.warn('Falha ao criar jogador online', e); }
     }
+  } catch(e){
+    console.warn('API indisponível, iniciando local', e);
+    window.currentPlayer = { player_name: playerName, total_score: 0, current_level: 1, badges_earned: '', challenges_completed: 0, class_group: classGroup };
+  }
+  (window.showGameDashboard || function(){})();
+};
 
-    (window.showGameDashboard || function(){})();
-  };
+finishChallenge = async function(){
+  if (__finishChallenge) await __finishChallenge();
+  try{
+    await apiPost('/save-player', {
+      player_name: window.currentPlayer.player_name,
+      total_score: window.currentPlayer.total_score,
+      current_level: window.currentPlayer.current_level,
+      badges_earned: window.currentPlayer.badges_earned,
+      challenges_completed: window.currentPlayer.challenges_completed,
+      class_group: window.currentPlayer.class_group || ''
+    });
+  } catch(e){ console.warn('Sync após desafio falhou', e); }
+};
 
-  // FINISH CHALLENGE: deixa o jogo calcular e salva no Supabase
-  finishChallenge = async function () {
-    if (__finishChallenge) await __finishChallenge();
+updateLeaderboard = function(){
+  (async()=>{
+    const list = document.getElementById('leaderboard-list');
     try {
+      const res = await apiGet('/get-leaderboard');
+      const sorted = res.players || [];
+      if (sorted.length === 0){ list.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>'; return; }
+      list.innerHTML = sorted.map((player, idx)=>{
+        const medals=['🥇','🥈','🥉']; const medal = medals[idx] || `#${idx+1}`;
+        const isMe = window.currentPlayer && player.player_name === window.currentPlayer.player_name;
+        const turma = player.class_group ? ` • Turma ${player.class_group}` : '';
+        return `\n <div class="flex items-center gap-4 p-4 rounded-lg ${isMe ? 'bg-emerald-900/30 border border-emerald-500/50' : 'bg-slate-800/50'}">\n  <span class="text-2xl w-10 text-center">${medal}</span>\n  <div class="flex-1">\n   <p class="font-bold ${isMe ? 'text-emerald-400' : 'text-white'}">${player.player_name}</p>\n   <p class="text-sm text-slate-400">Nível ${player.current_level || 1} • ${player.challenges_completed || 0} desafios${turma}</p>\n  </div>\n  <div class="text-right">\n   <p class="font-orbitron text-xl text-cyan-400">${player.total_score || 0}</p>\n   <p class="text-xs text-slate-500">XP</p>\n  </div>\n </div>`;
+      }).join('');
+    } catch(e){ console.error('Erro ranking online', e); list.innerHTML = '<p class="text-red-400 text-center py-8">Não foi possível carregar o ranking online.</p>'; }
+  })();
+};
+
+clearRanking = function(){
+  (async()=>{
+    const key = prompt('Para limpar o ranking geral, digite a CHAVE DE ADMINISTRADOR (ou deixe vazio):') || '';
+    try{
+      const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method:'POST', headers: { 'x-admin-key': key } });
+      if (!res.ok) throw new Error('Erro ao limpar');
+      hideLeaderboard && hideLeaderboard();
+      showResultModal && showResultModal('🗑️','Ranking Limpo','Todos os dados foram removidos com sucesso!','');
+    } catch(e){ showResultModal && showResultModal('⚠️','Ação negada','Chave inválida ou erro no servidor.',''); }
+  })();
+};
+
+// Força salvar antes de abrir o ranking + auto-save periódico
+(function hookLeaderboardButton(){
+  function attach(){
+    const btn = document.getElementById('leaderboard-btn');
+    if (!btn || btn.__hookedForceSave) return !!btn;
+    btn.addEventListener('click', async ()=>{
+      try{
+        const p = window.currentPlayer; if (!p || !p.player_name) return;
+        await apiPost('/save-player', {
+          player_name:p.player_name, total_score:p.total_score||0, current_level:p.current_level||1,
+          badges_earned:p.badges_earned||'', challenges_completed:p.challenges_completed||0, class_group:p.class_group||''
+        });
+      } catch{}
+    }, { capture:true });
+    btn.__hookedForceSave = true; return true;
+  }
+  if (!attach()){
+    let t=0; const iv=setInterval(()=>{ t++; if (attach() || t>10) clearInterval(iv); }, 500);
+  }
+})();
+
+(function setupAutoSave(){
+  const INTERVAL_MS = 4000; let lastSig = null;
+  async function autoSave(){
+    try{
+      const p = window.currentPlayer; if (!p || !p.player_name) return;
+      const sig = [p.player_name,p.total_score,p.current_level,p.challenges_completed,p.badges_earned,p.class_group||''].join('|');
+      if (sig === lastSig) return;
       await apiPost('/save-player', {
-        player_name: window.currentPlayer.player_name,
-        total_score: window.currentPlayer.total_score,
-        current_level: window.currentPlayer.current_level,
-        badges_earned: window.currentPlayer.badges_earned,
-        challenges_completed: window.currentPlayer.challenges_completed,
-        class_group: window.currentPlayer.class_group || ''
+        player_name:p.player_name, total_score:p.total_score||0, current_level:p.current_level||1,
+        badges_earned:p.badges_earned||'', challenges_completed:p.challenges_completed||0, class_group:p.class_group||''
       });
-    } catch (e) {
-      console.warn('Não foi possível sincronizar com ranking online:', e);
-    }
-  };
+      lastSig = sig;
+    } catch{}
+  }
+  setInterval(autoSave, INTERVAL_MS);
+  document.addEventListener('visibilitychange', ()=>{ if (document.hidden) autoSave(); });
+  window.addEventListener('beforeunload', ()=>{
+    try{
+      const p = window.currentPlayer; if (!p || !p.player_name) return;
+      const body = JSON.stringify({ player_name:p.player_name, total_score:p.total_score||0, current_level:p.current_level||1, badges_earned:p.badges_earned||'', challenges_completed:p.challenges_completed||0, class_group:p.class_group||'' });
+      navigator.sendBeacon?.(`${SUPABASE_BASE}/save-player`, new Blob([body],{type:'application/json'}));
+    } catch{}
+  });
+})();
+</script>
 
-  // LEADERBOARD: sempre lê do Supabase (e mostra TURMA)
-  updateLeaderboard = function () {
-    (async () => {
-      const list = document.getElementById('leaderboard-list');
-      try {
-        const res = await apiGet('/get-leaderboard');
-        const sorted = res.players || [];
-        if (sorted.length === 0) {
-          list.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>';
-          return;
-        }
-        list.innerHTML = sorted.map((player, index) => {
-          const medals = ['🥇','🥈','🥉'];
-          const medal = medals[index] || `#${index+1}`;
-          const isMe = window.currentPlayer && player.player_name === window.currentPlayer.player_name;
-          const turma = player.class_group ? ` • Turma ${player.class_group}` : '';
-          return `
-            <div class="flex items-center gap-4 p-4 rounded-lg ${isMe ? 'bg-emerald-900/30 border border-emerald-500/50' : 'bg-slate-800/50'}">
-              <span class="text-2xl w-10 text-center">${medal}</span>
-              <div class="flex-1">
-                <p class="font-bold ${isMe ? 'text-emerald-400' : 'text-white'}">${player.player_name}</p>
-                <p class="text-sm text-slate-400">Nível ${player.current_level || 1} • ${player.challenges_completed || 0} desafios${turma}</p>
-              </div>
-              <div class="text-right">
-                <p class="font-orbitron text-xl text-cyan-400">${player.total_score || 0}</p>
-                <p class="text-xs text-slate-500">XP</p>
-              </div>
-            </div>`;
-        }).join('');
-      } catch (e) {
-        console.error('Erro ao carregar ranking online', e);
-        list.innerHTML = '<p class="text-red-400 text-center py-8">Não foi possível carregar o ranking online.</p>';
-      }
-    })();
-  };
-
-  // LIMPAR: zera banco via function clear-ranking (com x-admin-key se você tiver
- </body>
+</body>
 
 </html>
 
