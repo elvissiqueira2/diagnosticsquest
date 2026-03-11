@@ -1456,11 +1456,56 @@
         document.querySelectorAll('.match-right').forEach(i => i.classList.remove('border-cyan-400'));
         matchSelections = { left: null, right: null };
       }
-    }
-
-    <script>
-// >>> SUBSTITUIR A FUNÇÃO EXISTENTE POR ESTA VERSÃO (SALVA A CADA QUESTÃO) <<<
+// SUBSTITUIR APENAS O CORPO DA FUNÇÃO EXISTENTE
 async function checkAnswer(isCorrect, question) {
+  // Marca que esta questão foi respondida
+  questionsAnswered.add(currentQuestionIndex);
+
+  // Pontos que esta questão vale
+  let points = 0;
+  if (isCorrect) {
+    points = Math.floor(currentChallenge.xpReward / currentChallenge.questions.length);
+    // Soma ao placar do desafio (como já era)
+    challengeScore += points;
+
+    // >>> NOVO: somar imediatamente ao jogador <<<
+    currentPlayer.total_score = (currentPlayer.total_score || 0) + points;
+
+    // >>> NOVO: recalcular nível incrementalmente <<<
+    const newLevel = Math.floor((currentPlayer.total_score || 0) / 1000) + 1;
+    currentPlayer.current_level = Math.max(currentPlayer.current_level || 1, newLevel);
+
+    // >>> NOVO: atualizar UI (placar, nível, barra/XP) <<<
+    try {
+      document.getElementById('score-display').textContent = currentPlayer.total_score || 0;
+      document.getElementById('level-display').textContent = currentPlayer.current_level || 1;
+      const xpForLevel = (currentPlayer.total_score || 0) % 1000;
+      document.getElementById('xp-display').textContent = `${xpForLevel}/1000 XP`;
+      document.getElementById('xp-bar').style.width = `${(xpForLevel / 1000) * 100}%`;
+    } catch (_) {}
+
+    // >>> NOVO: salvar no Supabase a cada questão <<<
+    try {
+      await apiPost('/save-player', {
+        player_name: currentPlayer.player_name,
+        total_score: currentPlayer.total_score,
+        current_level: currentPlayer.current_level,
+        badges_earned: currentPlayer.badges_earned || '',
+        // challenges_completed mantém a soma no final do módulo (finishChallenge)
+        challenges_completed: currentPlayer.challenges_completed || 0,
+        class_group: currentPlayer.class_group || ''
+      });
+    } catch (e) {
+      console.warn('save-player (por questão) falhou', e);
+    }
+  }
+
+  // UI do resultado (como já era)
+  const icon      = isCorrect ? '✅' : '❌';
+  const title     = isCorrect ? 'CORRETO!' : 'INCORRETO';
+  const pointsTxt = isCorrect ? `+${points} XP` : '+0 XP';
+  showResultModal(icon, title, question.explanation, pointsTxt);
+}async function checkAnswer(isCorrect, question) {
   // Marca que esta questão foi respondida
   questionsAnswered.add(currentQuestionIndex);
 
@@ -2072,6 +2117,7 @@ clearRanking = function(){
 </body>
 
 </html>
+
 
 
 
