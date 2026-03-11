@@ -2055,9 +2055,41 @@ clearRanking = function(){
   }, { capture:true });
 })();
 </script>
+  <script>
+// LIMPAR SEM CHAVE (enquanto a function estiver pública)
+(function noKeyClear(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+  const btn = document.getElementById('clear-ranking-btn');
+  if (!btn) return;
+
+  // Intercepta antes de qualquer handler antigo
+  btn.addEventListener('click', async (ev) => {
+    try {
+      ev.stopImmediatePropagation?.();
+      ev.preventDefault?.();
+
+      const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method: 'POST' });
+      if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
+
+      // Fecha e atualiza o ranking
+      if (typeof hideLeaderboard === 'function') hideLeaderboard();
+      if (typeof updateLeaderboard === 'function') updateLeaderboard();
+      if (typeof showResultModal === 'function') {
+        showResultModal('🗑️', 'Ranking Limpo', 'Dados removidos do banco com sucesso!', '');
+      }
+    } catch (e) {
+      if (typeof showResultModal === 'function') {
+        showResultModal('⚠️', 'Falha ao limpar', 'Tente novamente em alguns segundos.', '');
+      }
+      console.warn('clear-ranking', e);
+    }
+  }, { capture: true });
+})();
+</script>
 </body>
 
 </html>
+
 
 
 
