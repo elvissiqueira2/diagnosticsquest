@@ -2124,9 +2124,64 @@ updateLeaderboard = function(){
   }
 })();
 </script>
+  <script>
+// ===== LIMPAR SEM CHAVE (força SEM prompt e SEM handlers antigos) =====
+(function hardNoKeyClear(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  // 1) Substitui a função global para não pedir chave
+  window.clearRanking = async function () {
+    try {
+      const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method: 'POST' });
+      if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
+      // Fecha e atualiza o ranking
+      if (typeof hideLeaderboard === 'function') hideLeaderboard();
+      if (typeof updateLeaderboard === 'function') updateLeaderboard();
+      if (typeof showResultModal === 'function') {
+        showResultModal('🗑️', 'Ranking Limpo', 'Dados removidos do banco com sucesso!', '');
+      }
+    } catch (e) {
+      if (typeof showResultModal === 'function') {
+        showResultModal('⚠️', 'Falha ao limpar', 'Tente novamente em alguns segundos.', '');
+      }
+      console.warn('clear-ranking', e);
+    }
+  };
+
+  // 2) Remove event listeners antigos do botão (clonando o elemento)
+  function stripListenersAndWire() {
+    const oldBtn = document.getElementById('clear-ranking-btn');
+    if (!oldBtn) return false;
+
+    const newBtn = oldBtn.cloneNode(true); // clona sem os listeners
+    oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+
+    // 3) Liga nosso clique SEM prompt e bloqueia qualquer outro handler
+    newBtn.addEventListener('click', async (ev) => {
+      ev.stopImmediatePropagation?.();
+      ev.preventDefault?.();
+      try { await window.clearRanking(); } catch {}
+    }, { capture: true });
+
+    // marca para não repetir
+    newBtn.__noKeyHook = true;
+    return true;
+  }
+
+  // tenta agora; se o botão ainda não existir, re-tenta por alguns instantes
+  if (!stripListenersAndWire()) {
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if (stripListenersAndWire() || tries > 10) clearInterval(iv);
+    }, 500);
+  }
+})();
+</script>
 </body>
 
 </html>
+
 
 
 
