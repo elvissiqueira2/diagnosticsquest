@@ -1978,9 +1978,64 @@ clearRanking = function(){
   }, { capture: true });
 })();
 </script>
+
+  <script>
+// Intercepta o botão "Limpar" para chamar a Edge Function clear-ranking (e bloqueia o handler antigo)
+(function interceptClearButton(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  function attach(){
+    const btn = document.getElementById('clear-ranking-btn');
+    if (!btn || btn.__supabaseHook) return !!btn;
+
+    btn.addEventListener('click', async (ev) => {
+      try {
+        // Bloqueia o listener antigo (local) e garante que só este rode
+        ev.stopImmediatePropagation();
+        ev.preventDefault();
+
+        const key = prompt('Para limpar o ranking geral, digite a CHAVE DE ADMINISTRADOR (ou deixe vazio):') || '';
+
+        const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, {
+          method: 'POST',
+          headers: { 'x-admin-key': key }
+        });
+
+        if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
+
+        // Feedback e atualização de UI
+        if (typeof hideLeaderboard === 'function') hideLeaderboard();
+        if (typeof updateLeaderboard === 'function') updateLeaderboard();
+        if (typeof showResultModal === 'function') {
+          showResultModal('🗑️','Ranking Limpo','Todos os dados foram removidos do banco.','');
+        }
+      } catch (e) {
+        if (typeof showResultModal === 'function') {
+          showResultModal('⚠️','Ação negada','Chave inválida ou erro no servidor.','');
+        }
+        console.warn('clear-ranking erro', e);
+      }
+    }, { capture: true }); // <- captura o clique antes do handler antigo
+
+    btn.__supabaseHook = true;
+    return true;
+  }
+
+  if (!attach()) {
+    // Se o botão ainda não existe (UI ainda montando), tentar por alguns instantes
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if (attach() || tries > 10) clearInterval(iv);
+    }, 500);
+  }
+})();
+</script>
+  
 </body>
 
 </html>
+
 
 
 
