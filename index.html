@@ -2086,9 +2086,56 @@ clearRanking = function(){
   }, { capture: true });
 })();
 </script>
+  <script>
+// ===== LIMPAR SEM CHAVE (força sem prompt) =====
+(function forceNoKeyClear(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  // 1) Sobrescreve a função global para não pedir chave
+  window.clearRanking = async function () {
+    try {
+      const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method: 'POST' });
+      if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
+      // Fecha e atualiza o ranking
+      if (typeof hideLeaderboard === 'function') hideLeaderboard();
+      if (typeof updateLeaderboard === 'function') updateLeaderboard();
+      if (typeof showResultModal === 'function') {
+        showResultModal('🗑️', 'Ranking Limpo', 'Dados removidos do banco com sucesso!', '');
+      }
+    } catch (e) {
+      if (typeof showResultModal === 'function') {
+        showResultModal('⚠️', 'Falha ao limpar', 'Tente novamente em alguns segundos.', '');
+      }
+      console.warn('clear-ranking', e);
+    }
+  };
+
+  // 2) Intercepta o clique do botão e impede qualquer handler antigo que exiba prompt
+  function attach() {
+    const btn = document.getElementById('clear-ranking-btn');
+    if (!btn || btn.__noKeyHook) return !!btn;
+
+    btn.addEventListener('click', async (ev) => {
+      ev.stopImmediatePropagation?.(); // bloqueia o listener antigo
+      ev.preventDefault?.();
+      try { await window.clearRanking(); } catch {}
+    }, { capture: true }); // captura ANTES do handler antigo
+
+    btn.__noKeyHook = true;
+    return true;
+  }
+
+  if (!attach()) {
+    // se o botão ainda não existir, tenta por alguns instantes
+    let tries = 0;
+    const iv = setInterval(() => { tries++; if (attach() || tries > 10) clearInterval(iv); }, 500);
+  }
+})();
+</script>
 </body>
 
 </html>
+
 
 
 
