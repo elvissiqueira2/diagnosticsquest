@@ -1885,15 +1885,7 @@ updateLeaderboard = function(){
   })();
 };
 
-clearRanking = function(){
-  (async()=>{
-    const key = prompt('Para limpar o ranking geral, digite a CHAVE DE ADMINISTRADOR (ou deixe vazio):') || '';
-    try{
-      const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method:'POST', headers: { 'x-admin-key': key } });
-      if (!res.ok) throw new Error('Erro ao limpar');
-      hideLeaderboard && hideLeaderboard();
-      showResultModal && showResultModal('🗑️','Ranking Limpo','Todos os dados foram removidos com sucesso!','');
-    } catch(e){ showResultModal && showResultModal('⚠️','Ação negada','Chave inválida ou erro no servidor.',''); }
+ catch(e){ showResultModal && showResultModal('⚠️','Ação negada','Chave inválida ou erro no servidor.',''); }
   })();
 };
 
@@ -2135,6 +2127,7 @@ clearRanking = function(){
 </body>
 
 </html>
+
 
 
 
