@@ -2127,9 +2127,57 @@ clearRanking = function(){
   }
 })();
 </script>
+  <script>
+// 🧲 Observa quando o placar na tela muda e salva no Supabase automaticamente
+(function watchScoreAndAutosave(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+  const scoreEl = document.getElementById('score-display');
+  if (!scoreEl) return;
+
+  let lastSig = null;
+  let timer;
+
+  async function saveNow(reason='observer'){
+    try {
+      const p = window.currentPlayer;
+      if (!p || !p.player_name) return;
+
+      // Assumimos que a UI já atualizou p.total_score quando o score-display mudou
+      const sig = [p.player_name, p.total_score, p.current_level, p.challenges_completed, p.badges_earned, p.class_group||''].join('|');
+      if (sig === lastSig) return;
+
+      await fetch(`${SUPABASE_BASE}/save-player`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          player_name: p.player_name,
+          total_score: p.total_score || 0,
+          current_level: p.current_level || 1,
+          badges_earned: p.badges_earned || '',
+          challenges_completed: p.challenges_completed || 0,
+          class_group: p.class_group || ''
+        })
+      });
+      lastSig = sig;
+      // console.log('autosave', reason, lastSig);
+    } catch(e) { /* silencioso */ }
+  }
+
+  const mo = new MutationObserver(() => {
+    // debounce 400ms para acumular múltiplas mudanças
+    clearTimeout(timer);
+    timer = setTimeout(() => saveNow('mutation'), 400);
+  });
+  mo.observe(scoreEl, { subtree:true, childList:true, characterData:true });
+
+  // fallback: salva também a cada 5s
+  setInterval(() => saveNow('interval'), 5000);
+})();
+</script>
 </body>
 
 </html>
+
 
 
 
