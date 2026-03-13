@@ -2340,6 +2340,172 @@ updateLeaderboard = function(){
 })();
 </script>
 ``
+  <style>
+/* Destaque da linha do aluno no ranking */
+@keyframes rowGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
+  60%  { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+.row-highlight {
+  border: 1px solid rgba(16,185,129,.6) !important;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.35);
+  animation: rowGlow 2s ease-out infinite;
+}
+</style>
+
+<script>
+/* ===========================================================
+   FIX CONTINUAR PRESO + SALVAR A CADA ACERTO (ES5 compatível)
+   - Recria o botão "CONTINUAR" sem listeners antigos
+   - CAPTURE: salva pontos no Supabase
+   - BUBBLE: chama continueAfterResult() para prosseguir o jogo
+   =========================================================== */
+(function fixContinueAndLiveSave(){
+  var SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  function $(id){ return document.getElementById(id); }
+  function txt(el){ return el ? (el.textContent || el.innerText || '') : ''; }
+
+  function gainedFromModal(){
+    var t = txt($('result-points'));           // ex.: "+100 XP"
+    var m = t.match(/\+(\d+)/);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+  function isRankingOpen(){
+    var m = $('leaderboard-modal');
+    return m && m.className.indexOf('hidden') === -1;
+  }
+  function updateHUD(p){
+    var scoreEl = $('score-display');
+    var levelEl = $('level-display');
+    var xpEl    = $('xp-display');
+    var bar     = $('xp-bar');
+    if (scoreEl) scoreEl.textContent = p.total_score || 0;
+    if (levelEl) levelEl.textContent = p.current_level || 1;
+    var xp = (p.total_score || 0) % 1000;
+    if (xpEl)  xpEl.textContent = xp + '/1000 XP';
+    if (bar)   bar.style.width  = ((xp / 1000) * 100) + '%';
+  }
+  function saveToSupabase(p, done){
+    var body = {
+      player_name: p.player_name,
+      total_score: p.total_score || 0,
+      current_level: p.current_level || 1,
+      badges_earned: p.badges_earned || '',
+      challenges_completed: p.challenges_completed || 0,
+      class_group: p.class_group || ''
+    };
+    if (typeof window.apiPost === 'function') {
+      window.apiPost('/save-player', body).then(function(){ if(done) done(200); }).catch(function(){ if(done) done(500); });
+      return;
+    }
+    fetch(SUPABASE_BASE + '/save-player', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify(body)
+    }).then(function(r){ if(done) done(r.status); }).catch(function(){ if(done) done(500); });
+  }
+  function refreshLeaderboardAndHighlight(){
+    if (!isRankingOpen()) return;
+    if (typeof window.updateLeaderboard === 'function') {
+      window.updateLeaderboard();
+      setTimeout(function(){
+        try {
+          var list = $('leaderboard-list');
+          var name = window.currentPlayer && window.currentPlayer.player_name;
+          if (!list || !name) return;
+          var i, cards = list.children, card, found = null;
+          for (i=0;i<cards.length;i++){
+            card = cards[i];
+            card.classList.remove('row-highlight');
+            if ((card.textContent || '').indexOf(name) !== -1) { found = card; }
+          }
+          if (found) {
+            found.classList.add('row-highlight');
+            found.scrollIntoView({ block:'nearest', behavior:'smooth' });
+          }
+        } catch(e){}
+      }, 150);
+    }
+  }
+
+  // Evita salvar 2x a mesma pergunta
+  var lastSavedKey = null;
+  function currentQuestionKey(){
+    if (typeof window.currentQuestionIndex === 'number' && window.currentChallenge) {
+      return 'q_' + window.currentChallenge.id + '_' + window.currentQuestionIndex;
+    }
+    return 't_' + Date.now();
+  }
+
+  function captureSaveHandler(/*ev*/){
+    // calcula uma chave da questão atual
+    var key = currentQuestionKey();
+    if (key === lastSavedKey) return;
+
+    var gained = gainedFromModal();
+    if (!gained) return; // sem pontos → não salva
+
+    if (!window.currentPlayer) {
+      var nameInput  = $('player-name-input');
+      var classInput = $('class-group-input');
+      window.currentPlayer = {
+        player_name: (nameInput && nameInput.value || 'Aluno').trim(),
+        total_score: 0, current_level: 1,
+        badges_earned: '', challenges_completed: 0,
+        class_group: (classInput && classInput.value || '').trim()
+      };
+    }
+    var p = window.currentPlayer;
+    if (!p.player_name) return;
+
+    // Soma imediatamente e recalcula nível
+    p.total_score = (p.total_score || 0) + gained;
+    p.current_level = Math.max(p.current_level || 1, Math.floor((p.total_score || 0)/1000) + 1);
+
+    updateHUD(p);
+    saveToSupabase(p, function(){ refreshLeaderboardAndHighlight(); });
+    lastSavedKey = key;
+  }
+
+  function bubbleProceedHandler(ev){
+    try {
+      if (typeof window.continueAfterResult === 'function') {
+        // chama o fluxo original para fechar o modal e ir à próxima pergunta
+        window.continueAfterResult(ev);
+      }
+    } catch(e){ console.warn('continueAfterResult error', e); }
+  }
+
+  function wire(){
+    var btn = $('result-continue');
+    if (!btn) return false;
+
+    // Clona para REMOVER listeners antigos que podem ter ficado presos
+    var clone = btn.cloneNode(true);
+    btn.parentNode.replaceChild(clone, btn);
+
+    // 1) CAPTURE → salva pontos antes do jogo avançar
+    clone.addEventListener('click', captureSaveHandler, true);
+
+    // 2) BUBBLE  → prossegue o jogo SEM impedir propagação
+    clone.addEventListener('click', bubbleProceedHandler, false);
+
+    clone.__fixed = true;
+    return true;
+  }
+
+  // Tenta ligar agora; se ainda não existir, re-tenta por alguns instantes
+  if (!wire()) {
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries++;
+      if (wire() || tries > 20) clearInterval(iv);
+    }, 400);
+  }
+})();
+</script>
 </body>
 
 </html>
