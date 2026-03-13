@@ -2364,9 +2364,119 @@ updateLeaderboard = function(){
 })();
 </script>
 ``
+  <style>
+/* Destaque da linha do aluno no ranking */
+@keyframes rowGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
+  60%  { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+.row-highlight {
+  border: 1px solid rgba(16,185,129,.6) !important;   /* border-emerald-500 */
+  box-shadow: 0 0 0 3px rgba(16,185,129,.35);         /* halo */
+  animation: rowGlow 2s ease-out infinite;
+}
+</style>
+
+<script>
+/* ===========================================================
+   SALVAR A CADA ACERTO (via modal) + ATUALIZAR/DESTACAR RANKING
+   =========================================================== */
+(function liveSaveModalObserver(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  async function saveToSupabase(p){
+    const body = {
+      player_name: p.player_name,
+      total_score: p.total_score || 0,
+      current_level: p.current_level || 1,
+      badges_earned: p.badges_earned || '',
+      challenges_completed: p.challenges_completed || 0,
+      class_group: p.class_group || ''
+    };
+    // usa o helper do seu arquivo, se existir; senão, faz fetch direto
+    if (typeof window.apiPost === 'function') return window.apiPost('/save-player', body);
+    return fetch(`${SUPABASE_BASE}/save-player`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+  }
+
+  function refreshLeaderboardIfOpen(){
+    const lb = document.getElementById('leaderboard-modal');
+    if (lb && !lb.classList.contains('hidden') && typeof window.updateLeaderboard === 'function') {
+      window.updateLeaderboard();
+      setTimeout(() => {
+        try {
+          const list = document.getElementById('leaderboard-list');
+          const me = window.currentPlayer
+            ? list.querySelector(`[data-name="${CSS.escape(window.currentPlayer.player_name)}"]`)
+            : null;
+          me?.scrollIntoView({ block:'nearest', behavior:'smooth' });
+        } catch(_) {}
+      }, 150);
+    }
+  }
+
+  function updateMainHUDFromPlayer() {
+    try {
+      const p = window.currentPlayer || {};
+      document.getElementById('score-display').textContent = p.total_score || 0;
+      document.getElementById('level-display').textContent  = p.current_level || 1;
+      const xpForLevel = (p.total_score || 0) % 1000;
+      document.getElementById('xp-display').textContent = `${xpForLevel}/1000 XP`;
+      document.getElementById('xp-bar').style.width = `${(xpForLevel / 1000) * 100}%`;
+    } catch(_){}
+  }
+
+  // --- 1) Quando o modal de resultado ABRIR, salvar o ganho ---
+  let lastSavedQuestionIndex = -1;
+  const modal = document.getElementById('result-modal');
+
+  async function trySaveFromModal(){
+    const p = window.currentPlayer;
+    if (!p || !p.player_name) return;
+
+    // Evita salvar duas vezes a mesma questão (usa currentQuestionIndex do seu jogo)
+    if (typeof window.currentQuestionIndex === 'number' &&
+        lastSavedQuestionIndex === window.currentQuestionIndex) return;
+
+    const pointsEl = document.getElementById('result-points');
+    const txt = (pointsEl?.textContent || '').trim();   // ex.: "+100 XP"
+    const m = txt.match(/\+(\d+)/);
+    const gained = m ? parseInt(m[1], 10) : 0;
+    if (!gained) return;
+
+    // soma imediatamente e recalcula nível
+    p.total_score = (p.total_score || 0) + gained;
+    p.current_level = Math.max(p.current_level || 1, Math.floor((p.total_score || 0)/1000) + 1);
+
+    updateMainHUDFromPlayer();
+
+    try { await saveToSupabase(p); } catch(e){ console.warn('save-player (modal) falhou', e); }
+    refreshLeaderboardIfOpen();
+
+    if (typeof window.currentQuestionIndex === 'number') {
+      lastSavedQuestionIndex = window.currentQuestionIndex;
+    }
+  }
+
+  if (modal) {
+    const mo = new MutationObserver(() => {
+      // sempre que a classe mudar, verificamos se o modal ficou visível
+      const hidden = modal.classList.contains('hidden');
+      if (!hidden) setTimeout(trySaveFromModal, 80); // pequena espera para o texto "+XP" estar no DOM
+    });
+    mo.observe(modal, { attributes:true, attributeFilter:['class'] });
+  }
+
+  // --- 2) Fallback: se o placar visível mudar, sincroniza e atualiza ranking ---
+  try {
+    const scoreEl = document.getElementById('score-display');
+    if (scoreEl && !scoreEl
 </body>
 
 </html>
+
 
 
 
