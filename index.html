@@ -2473,9 +2473,161 @@ updateLeaderboard = function(){
   try {
     const scoreEl = document.getElementById('score-display');
     if (scoreEl && !scoreEl
+        <style>
+/* Destaque da linha do aluno no ranking */
+@keyframes rowGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
+  60%  { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+.row-highlight {
+  border: 1px solid rgba(16,185,129,.6) !important;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.35);
+  animation: rowGlow 2s ease-out infinite;
+}
+</style>
+
+<script>
+/* ===========================================================
+   SALVAR A CADA ACERTO (gancho no botão "CONTINUAR" do modal)
+   - Soma os pontos do modal em currentPlayer.total_score
+   - Recalcula nível e atualiza HUD
+   - Salva no Supabase na hora (save-player)
+   - Se o ranking estiver aberto, atualiza e destaca a linha
+   =========================================================== */
+(function saveOnResultContinue(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+  let lastSavedIndex = -1; // evita salvar duas vezes a mesma questão
+
+  function getGainedFromModal(){
+    const el = document.getElementById('result-points');
+    if (!el) return 0;
+    const m = (el.textContent || '').match(/\+(\d+)/);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+
+  function updateHUD(p){
+    // Atualiza placar, nível e barra
+    var scoreEl = document.getElementById('score-display');
+    var levelEl = document.getElementById('level-display');
+    var xpEl    = document.getElementById('xp-display');
+    var bar     = document.getElementById('xp-bar');
+    if (scoreEl) scoreEl.textContent = p.total_score || 0;
+    if (levelEl) levelEl.textContent = p.current_level || 1;
+    var xpForLevel = (p.total_score || 0) % 1000;
+    if (xpEl)  xpEl.textContent = xpForLevel + '/1000 XP';
+    if (bar)   bar.style.width  = ((xpForLevel / 1000) * 100) + '%';
+  }
+
+  function refreshLeaderboardIfOpen(){
+    var lb = document.getElementById('leaderboard-modal');
+    if (lb && !lb.classList.contains('hidden')) {
+      if (typeof window.updateLeaderboard === 'function') {
+        window.updateLeaderboard();
+      }
+      setTimeout(function(){
+        try {
+          var list = document.getElementById('leaderboard-list');
+          var name = window.currentPlayer && window.currentPlayer.player_name;
+          if (!name) return;
+          // Destaca a linha do aluno mesmo que o HTML do ranking não tenha data-attrs
+          var cards = list ? list.children : [];
+          for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            card.classList.remove('row-highlight');
+            if ((card.textContent || '').indexOf(name) !== -1) {
+              card.classList.add('row-highlight');
+              card.scrollIntoView({ block:'nearest', behavior:'smooth' });
+            }
+          }
+        } catch(_) {}
+      }, 150);
+    }
+  }
+
+  function saveToSupabase(p){
+    // Se já existir apiPost (do seu arquivo), usa; senão, fetch direto
+    var body = {
+      player_name: p.player_name,
+      total_score: p.total_score || 0,
+      current_level: p.current_level || 1,
+      badges_earned: p.badges_earned || '',
+      challenges_completed: p.challenges_completed || 0,
+      class_group: p.class_group || ''
+    };
+    if (typeof window.apiPost === 'function') {
+      return window.apiPost('/save-player', body);
+    }
+    return fetch(SUPABASE_BASE + '/save-player', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+  }
+
+  function handler(){
+    // Identifica a questão atual (se existir índice global)
+    var qi = (typeof window.currentQuestionIndex === 'number')
+               ? window.currentQuestionIndex
+               : Date.now();
+
+    if (qi === lastSavedIndex) return; // já salvou essa questão
+
+    var gained = getGainedFromModal();
+    if (gained <= 0) return; // questão errada ou sem pontos
+
+    // Garante currentPlayer
+    if (!window.currentPlayer) {
+      var nameInput  = document.getElementById('player-name-input');
+      var classInput = document.getElementById('class-group-input');
+      window.currentPlayer = {
+        player_name: (nameInput && nameInput.value || '').trim() || 'Aluno',
+        total_score: 0,
+        current_level: 1,
+        badges_earned: '',
+        challenges_completed: 0,
+        class_group: (classInput && classInput.value || '').trim() || ''
+      };
+    }
+
+    var p = window.currentPlayer;
+    if (!p.player_name) return;
+
+    // Soma pontos imediatamente e recalcula nível
+    p.total_score = (p.total_score || 0) + gained;
+    p.current_level = Math.max(p.current_level || 1, Math.floor((p.total_score || 0) / 1000) + 1);
+
+    updateHUD(p);
+    saveToSupabase(p);          // não bloqueia a UI
+    refreshLeaderboardIfOpen(); // se ranking estiver aberto, atualiza e destaca
+
+    lastSavedIndex = qi;
+  }
+
+  function attach(){
+    var btn = document.getElementById('result-continue');
+    if (!btn) return false;
+    if (btn.__saveHook) return true;
+    // CAPTURE: nosso handler roda ANTES do handler interno do jogo
+    btn.addEventListener('click', handler, { capture: true });
+    btn.__saveHook = true;
+    return true;
+  }
+
+  if (!attach()) {
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries++;
+      if (attach() || tries > 20) clearInterval(iv);
+    }, 500);
+  }
+})();
+</script>
+``
 </body>
 
 </html>
+
 
 
 
