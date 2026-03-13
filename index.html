@@ -2178,9 +2178,196 @@ updateLeaderboard = function(){
   }
 })();
 </script>
+  <style>
+/* Destaque da linha do aluno no ranking */
+@keyframes rowGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
+  60%  { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+.row-highlight {
+  border: 1px solid rgba(16,185,129,.6) !important;      /* border-emerald-500 */
+  box-shadow: 0 0 0 3px rgba(16,185,129,.35);            /* halo */
+  animation: rowGlow 2s ease-out infinite;
+}
+</style>
+  <script>
+/* ===========================================================
+   SALVAR A CADA ACERTO + ATUALIZAR/DESTACAR NO RANKING
+   - Envolve showResultModal (que você já chama no checkAnswer)
+   - Atualiza total_score e level na hora
+   - Salva no Supabase imediatamente
+   - Se o ranking estiver aberto, atualiza e destaca o aluno
+   - Fallback: observa mudanças no #score-display e salva também
+   =========================================================== */
+
+(function liveSaveAndHighlight(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  // -------- helpers --------
+  async function saveToSupabase(p){
+    const body = {
+      player_name: p.player_name,
+      total_score: p.total_score || 0,
+      current_level: p.current_level || 1,
+      badges_earned: p.badges_earned || '',
+      challenges_completed: p.challenges_completed || 0,
+      class_group: p.class_group || ''
+    };
+    if (typeof window.apiPost === 'function') {
+      return window.apiPost('/save-player', body);
+    }
+    return fetch(`${SUPABASE_BASE}/save-player`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+  }
+
+  function refreshLeaderboardIfOpen(){
+    const lb = document.getElementById('leaderboard-modal');
+    if (lb && !lb.classList.contains('hidden') && typeof window.updateLeaderboard === 'function') {
+      window.updateLeaderboard();
+      // dar tempo de renderizar e focar a linha do aluno
+      setTimeout(() => {
+        try {
+          const list = document.getElementById('leaderboard-list');
+          const me = window.currentPlayer
+            ? list.querySelector(`[data-name="${CSS.escape(window.currentPlayer.player_name)}"]`)
+            : null;
+          me?.scrollIntoView({ block:'nearest', behavior:'smooth' });
+        } catch(_){}
+      }, 150);
+    }
+  }
+
+  function updateMainHUDFromPlayer() {
+    try {
+      const p = window.currentPlayer || {};
+      document.getElementById('score-display').textContent = p.total_score || 0;
+      document.getElementById('level-display').textContent  = p.current_level || 1;
+      const xpForLevel = (p.total_score || 0) % 1000;
+      document.getElementById('xp-display').textContent = `${xpForLevel}/1000 XP`;
+      document.getElementById('xp-bar').style.width = `${(xpForLevel / 1000) * 100}%`;
+    } catch(_){}
+  }
+
+  // -------- 1) Patch em showResultModal (salvar assim que ganha pontos) --------
+  const __origShow = window.showResultModal;
+  if (typeof __origShow === 'function' && !__origShow.__liveSavePatched) {
+    window.showResultModal = async function(icon, title, message, pointsText){
+      // mantém o comportamento original
+      try { __origShow.apply(this, arguments); } catch(e) { console.warn('orig showResultModal', e); }
+
+      // extrai pontos do texto, ex.: "+100 XP" => 100
+      let gained = 0;
+      if (typeof pointsText === 'string') {
+        const digits = (pointsText.match(/\d+/) || [])[0];
+        if (digits) gained = parseInt(digits, 10) || 0;
+      }
+
+      if (gained > 0 && window.currentPlayer && window.currentPlayer.player_name) {
+        try {
+          // incrementa no jogador e recalcula nível
+          const p = window.currentPlayer;
+          p.total_score = (p.total_score || 0) + gained;
+          const newLevel = Math.floor((p.total_score || 0) / 1000) + 1;
+          p.current_level = Math.max(p.current_level || 1, newLevel);
+
+          updateMainHUDFromPlayer();
+          await saveToSupabase(p);
+          refreshLeaderboardIfOpen();
+        } catch(e) {
+          console.warn('save-player (por acerto) falhou', e);
+        }
+      }
+    };
+    window.showResultModal.__liveSavePatched = true;
+  }
+
+  // -------- 2) Fallback: observar o placar da tela e salvar --------
+  try {
+    const scoreEl = document.getElementById('score-display');
+    if (scoreEl && !scoreEl.__observerPatched) {
+      let pending = null;
+      const observer = new MutationObserver(() => {
+        clearTimeout(pending);
+        pending = setTimeout(async () => {
+          try {
+            const txt = (scoreEl.textContent || '').replace(/[^\d]/g,'');
+            const screenScore = parseInt(txt,10) || 0;
+            const p = window.currentPlayer;
+            if (p && p.player_name && screenScore !== (p.total_score || 0)) {
+              p.total_score = screenScore;
+              const newLevel = Math.floor((p.total_score || 0) / 1000) + 1;
+              p.current_level = Math.max(p.current_level || 1, newLevel);
+              await saveToSupabase(p);
+              refreshLeaderboardIfOpen();
+            }
+          } catch(_){}
+        }, 300);
+      });
+      observer.observe(scoreEl, { childList:true, characterData:true, subtree:true });
+      scoreEl.__observerPatched = true;
+    }
+  } catch(_) {}
+
+  // -------- 3) Substituir updateLeaderboard para destacar a linha do aluno --------
+  window.updateLeaderboard = function () {
+    (async () => {
+      const list = document.getElementById('leaderboard-list');
+      try {
+        // usa o helper existente se houver
+        let data;
+        if (typeof window.apiGet === 'function') {
+          data = await window.apiGet('/get-leaderboard');
+        } else {
+          const r = await fetch(`${SUPABASE_BASE}/get-leaderboard`);
+          data = await r.json();
+        }
+        const players = data?.players || [];
+        if (!players.length) {
+          list.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>';
+          return;
+        }
+        list.innerHTML = players.map((player, index) => {
+          const medals = ['🥇','🥈','🥉'];
+          const medal = medals[index] || `#${index+1}`;
+          const isMe  = window.currentPlayer && player.player_name === window.currentPlayer.player_name;
+          const turma = player.class_group ? ` • Turma ${player.class_group}` : '';
+          return `
+ <div class="flex items-center gap-4 p-4 rounded-lg ${isMe ? 'bg-emerald-900/30 border border-emerald-500/50 row-highlight' : 'bg-slate-800/50'}"
+      data-name="${player.player_name}">
+   <span class="text-2xl w-10 text-center">${medal}</span>
+   <div class="flex-1">
+     <p class="font-bold ${isMe ? 'text-emerald-400' : 'text-white'}">${player.player_name}</p>
+     <p class="text-sm text-slate-400">Nível ${player.current_level || 1} • ${player.challenges_completed || 0} desafios${turma}</p>
+   </div>
+   <div class="text-right">
+     <p class="font-orbitron text-xl text-cyan-400">${player.total_score || 0}</p>
+     <p class="text-xs text-slate-500">XP</p>
+   </div>
+ </div>`;
+        }).join('');
+
+        // rolar até o aluno, se estiver na lista
+        try {
+          const me = window.currentPlayer
+            ? list.querySelector(`[data-name="${CSS.escape(window.currentPlayer.player_name)}"]`)
+            : null;
+          me?.scrollIntoView({ block:'nearest', behavior:'smooth' });
+        } catch(_){}
+      } catch (e) {
+        console.error('Erro ao carregar ranking online', e);
+        list.innerHTML = '<p class="text-red-400 text-center py-8">Não foi possível carregar o ranking online.</p>';
+      }
+    })();
+  };
+})();
+</script>
+``
 </body>
 
 </html>
+
 
 
 
