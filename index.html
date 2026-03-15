@@ -1710,7 +1710,6 @@ async function api(path, { method='GET', body=null, signal } = {}) {
   const ct = res.headers.get('content-type') || '';
   return ct.includes('application/json') ? res.json() : {};
 }
-</script>
   const getPlayer       = (name)   => api(`/get-player?name=${encodeURIComponent(name)}`); // GET  (retorna { player })
   const savePlayer      = (data)   => api('/save-player',      { method:'POST', body:data }); // POST (upsert por player_name)
   const getLeaderboard  = ()       => api('/get-leaderboard');                                  // GET (top 10)
