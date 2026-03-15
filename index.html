@@ -1677,81 +1677,78 @@
     initializeApp();
   </script>
   
- <script>
-// --- CONFIGURAÇÃO SUPABASE ---
-const SUB_URL = "https://pqtrsgtzrmrmjbijzqvg.supabase.co";
-const SUB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxdHJzZ3R6cm1ybWpiaWp6cXZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MTg3NTYsImV4cCI6MjA4ODM5NDc1Nn0.RXeyQrzDxofqewTJZhBpaHOnozBNYei1Lb7Log3QRww";
+// --- CONFIGURAÇÃO GLOBAL DO SUPABASE ---
+const SB_URL = "https://pqtrsgtzrmrmjbijzqvg.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxdHJzZ3R6cm1ybWpiaWp6cXZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MTg3NTYsImV4cCI6MjA4ODM5NDc1Nn0.RXeyQrzDxofqewTJZhBpaHOnozBNYei1Lb7Log3QRww";
 
-// Função para falar com suas Edge Functions
-async function callEdge(name, payload) {
+// Inicializa o cliente Supabase
+const supabase = libsupabase.createClient(SB_URL, SB_KEY);
+
+// Função para chamar as Edge Functions (Corrigida para evitar o erro 404)
+async function syncOnline(functionName, payload) {
     try {
-        const response = await fetch(`${SUB_URL}/functions/v1/${name}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUB_KEY}`
-            },
-            body: JSON.stringify(payload)
+        const { data, error } = await supabase.functions.invoke(functionName, {
+            body: payload
         });
-        return await response.json();
-    } catch (e) {
-        console.error("Erro na nuvem:", e);
+        if (error) throw error;
+        return data;
+    } catch (err) {
+        console.error(`Erro na Edge Function ${functionName}:`, err);
         return null;
     }
 }
 
-// Injetando a lógica no funcionamento original do jogo
-document.addEventListener('DOMContentLoaded', () => {
-    
-    // 1. Hook para Salvar Online sempre que o jogo salvar localmente
-    const originalSave = window.saveProgress;
-    window.saveProgress = async function() {
-        if (originalSave) originalSave(); // Mantém o save local (offline)
-        
-        const p = JSON.parse(localStorage.getItem('hdq_player') || '{}');
-        if (p.name) {
-            await callEdge('update-leaderboard', {
-                player_name: p.name,
-                class_group: p.class_group || 'Visitante',
-                total_score: p.score || 0,
-                current_level: p.level || 1,
-                challenges_completed: p.challenges_completed || 0,
-                badges_earned: Array.from(p.badges || []).join(',')
-            });
-        }
-    };
+// Interceptando o salvamento do jogo para enviar ao banco
+const originalSaveProgress = window.saveProgress;
+window.saveProgress = async function() {
+    // 1. Salva localmente primeiro (mantém o funcionamento original)
+    if (typeof originalSaveProgress === 'function') originalSaveProgress();
 
-    // 2. Hook para o Ranking (Substituindo a função de exibir)
-    window.updateLeaderboard = async function() {
-        const list = document.getElementById('leaderboard-list');
-        if (!list) return;
+    // 2. Tenta enviar para o ranking online
+    const playerData = JSON.parse(localStorage.getItem('hdq_player') || '{}');
+    if (playerData.name) {
+        await syncOnline('update-leaderboard', {
+            player_name: playerData.name,
+            class_group: playerData.class_group || 'Geral',
+            total_score: playerData.score || 0,
+            current_level: playerData.level || 1,
+            challenges_completed: playerData.challenges_completed || 0,
+            badges_earned: Array.from(playerData.badges || []).join(',')
+        });
+    }
+};
 
-        list.innerHTML = '<div class="text-center py-10"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div><p class="mt-2 text-xs">Conectando ao servidor...</p></div>';
+// Substituindo a função de exibir o ranking para ler do Supabase
+window.updateLeaderboard = async function() {
+    const list = document.getElementById('leaderboard-list');
+    if (!list) return;
 
-        const result = await callEdge('get-leaderboard', {});
-        const players = Array.isArray(result?.players) ? result.players : [];
+    list.innerHTML = '<div class="text-center py-8"><p class="animate-pulse text-emerald-400">Conectando ao ranking global...</p></div>';
 
-        if (players.length === 0) {
-            list.innerHTML = '<p class="text-center py-10 text-slate-500 text-sm">Nenhum registro online ainda.</p>';
-            return;
-        }
+    // Chama sua Edge Function de busca
+    const response = await syncOnline('get-leaderboard', {});
+    const players = response?.players || response || [];
 
-        list.innerHTML = players.map((p, index) => `
-            <div class="flex items-center justify-between p-3 glass-effect rounded-lg border-l-4 ${index < 3 ? 'border-emerald-400' : 'border-slate-500'} mb-2">
-                <div class="flex items-center gap-3">
-                    <span class="font-orbitron font-bold text-lg w-6">${index + 1}</span>
-                    <div>
-                        <p class="font-bold text-sm text-slate-100">${p.player_name} <span class="text-[10px] text-emerald-400">(${p.class_group})</span></p>
-                        <p class="text-[10px] text-slate-400 uppercase tracking-tighter">Nível ${p.current_level} • ${p.challenges_completed} Desafios</p>
-                    </div>
-                </div>
-                <div class="text-right font-orbitron">
-                    <p class="text-emerald-400 font-bold">${p.total_score} <span class="text-[8px]">XP</span></p>
+    if (!players || players.length === 0) {
+        list.innerHTML = '<p class="text-center py-8 text-slate-500">Nenhum recorde encontrado.</p>';
+        return;
+    }
+
+    // Renderiza a lista com os dados do banco
+    list.innerHTML = players.map((p, index) => `
+        <div class="flex items-center justify-between p-3 glass-effect rounded-lg border-l-4 ${index < 3 ? 'border-emerald-400' : 'border-slate-500'} mb-2">
+            <div class="flex items-center gap-3">
+                <span class="font-orbitron font-bold text-lg">${index + 1}</span>
+                <div>
+                    <p class="font-bold text-sm">${p.player_name} <span class="text-[10px] text-emerald-500">[${p.class_group}]</span></p>
+                    <p class="text-[10px] text-slate-400">Nível ${p.current_level} • ${p.challenges_completed} Desafios</p>
                 </div>
             </div>
-        `).join('');
-    };
-});
-</script>
+            <div class="text-right font-orbitron">
+                <p class="text-emerald-400 font-bold">${p.total_score} XP</p>
+            </div>
+        </div>
+    `).join('');
+};
  </body>
 </html>
