@@ -1674,6 +1674,7 @@
     // Initialize the app
     initializeApp();
   </script>
+  
   <!-- ======== SUPABASE: INTEGRAÇÃO LIMPA (mantendo o jogo original) ======== -->
 <script>
   // Config: usa window.__ENV__ se existir; senão, usa seus valores
@@ -1683,24 +1684,34 @@
   const EF_BASE       = `${SUPABASE_URL}/functions/v1`;
 
   // Cliente simples para Edge Functions com headers corretos
-  async function api(path, { method='GET', body=null, signal } = {}) {
-    const opts = {
-      method,
-      headers: {
-        'apikey'      : SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`
-      },
-      signal
-    };
-    if (method !== 'GET') {
-      opts.headers['Content-Type'] = 'application/json';
-      opts.body = JSON.stringify(body || {});
-    }
-    const res = await fetch(`${EF_BASE}${path}`, opts);
-    if (!res.ok) throw new Error(`[${path}] ${res.status} ${await res.text().catch(()=>res.statusText)}`);
-    const ct = res.headers.get('content-type') || '';
-    return ct.includes('application/json') ? res.json() : {};
+<script>
+// (SUBSTITUI a função api existente)
+async function api(path, { method='GET', body=null, signal } = {}) {
+  // 1) Cache-busting: para toda leitura GET, acrescenta ?_=<timestamp>
+  const url = method === 'GET'
+    ? `${EF_BASE}${path}${path.includes('?') ? '&' : '?'}_=${Date.now()}`
+    : `${EF_BASE}${path}`;
+
+  const opts = {
+    method,
+    cache: 'no-store', // 2) Avisa explicitamente o navegador para não armazenar
+    headers: {
+      'apikey'      : SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`
+    },
+    signal
+  };
+  if (method !== 'GET') {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body || {});
   }
+
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error(`[${path}] ${res.status} ${await res.text().catch(()=>res.statusText)}`);
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('application/json') ? res.json() : {};
+}
+</script>
   const getPlayer       = (name)   => api(`/get-player?name=${encodeURIComponent(name)}`); // GET  (retorna { player })
   const savePlayer      = (data)   => api('/save-player',      { method:'POST', body:data }); // POST (upsert por player_name)
   const getLeaderboard  = ()       => api('/get-leaderboard');                                  // GET (top 10)
@@ -1787,6 +1798,13 @@
           badges_earned: p.badges_earned || '',
           challenges_completed: p.challenges_completed || 0
         });
+// ADICIONE ESTAS LINHAS ▼▼▼
+      const lbOpen = !document.getElementById('leaderboard-modal')?.classList.contains('hidden');
+      if (lbOpen && typeof window.updateLeaderboard === 'function') {
+        await window.updateLeaderboard(); // lê do Supabase e já reflete a pontuação
+      }
+      // ▲▲▲
+
       } catch (e) {
         console.warn('[HDQ] Falha ao salvar após desafio:', e.message);
       }
