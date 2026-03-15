@@ -1674,1057 +1674,160 @@
     // Initialize the app
     initializeApp();
   </script>
- <script>
-// === Overrides para usar ranking ONLINE via Supabase Edge Functions ===
-// Cole aqui a SUA URL base do Supabase (sem barra no final):
-const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+  
+  <!-- ======== SUPABASE: INTEGRAÇÃO LIMPA (mantendo o jogo original) ======== -->
+<script>
+  // Config: usa window.__ENV__ se existir; senão, usa seus valores
+  const ENV = window.__ENV__ || {};
+  const SUPABASE_URL  = (ENV.SUPABASE_URL  || 'https://pqtrsgtzrmrmjbijzqvg.supabase.co').replace(/\/$/,'');
+  const SUPABASE_KEY  =  ENV.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxdHJzZ3R6cm1ybWpiaWp6cXZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MTg3NTYsImV4cCI6MjA4ODM5NDc1Nn0.RXeyQrzDxofqewTJZhBpaHOnozBNYei1Lb7Log3QRww';
+  const EF_BASE       = `${SUPABASE_URL}/functions/v1`;
 
-async function apiGet(path) {
-  const res = await fetch(`${SUPABASE_BASE}${path}`);
-  if (!res.ok) throw new Error('API GET failed');
-  return res.json();
-}
-async function apiPost(path, data, headers = {}) {
-  const res = await fetch(`${SUPABASE_BASE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify(data || {})
-  });
-  if (!res.ok) throw new Error('API POST failed');
-  return res.json();
-}
+  // Cliente simples para Edge Functions com headers corretos
+// (SUBSTITUI a função api existente)
+// SUBSTITUA a função api existente por esta (não cole <script> aqui!)
+async function api(path, { method='GET', body=null, signal } = {}) {
+  // 1) Cache-busting: para toda leitura GET, acrescenta ?_=<timestamp>
+  const url = method === 'GET'
+    ? `${EF_BASE}${path}${path.includes('?') ? '&' : '?'}_=${Date.now()}`
+    : `${EF_BASE}${path}`;
 
-// Guarda a função original (se existir) para manter o fluxo do jogo
-const __finishChallenge = typeof finishChallenge === 'function' ? finishChallenge : null;
-
-// START GAME: cria/carrega jogador no Supabase
-startGame = async function () {
-  const nameInput = document.getElementById('player-name-input');
-  const playerName = nameInput?.value?.trim();
-  if (!playerName) {
-    nameInput?.classList?.add('animate-shake', 'border-red-500');
-    setTimeout(() => nameInput?.classList?.remove('animate-shake', 'border-red-500'), 500);
-    return;
+  const opts = {
+    method,
+    cache: 'no-store', // 2) diz ao navegador para não armazenar cache
+    headers: {
+      'apikey'      : SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`
+    },
+    signal
+  };
+  if (method !== 'GET') {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body || {});
   }
-  try {
-    const res = await apiGet(`/get-player?name=${encodeURIComponent(playerName)}`);
-    if (res && res.player) {
-      window.currentPlayer = res.player;
-    } else {
-      window.currentPlayer = {
-        player_name: playerName,
-        total_score: 0,
-        current_level: 1,
-        badges_earned: '',
-        challenges_completed: 0
-      };
-      try { await apiPost('/save-player', window.currentPlayer); } catch (e) { console.warn('Falha ao criar jogador online:', e); }
+
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error(`[${path}] ${res.status} ${await res.text().catch(()=>res.statusText)}`);
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('application/json') ? res.json() : {};
+}
+  const getPlayer       = (name)   => api(`/get-player?name=${encodeURIComponent(name)}`); // GET  (retorna { player })
+  const savePlayer      = (data)   => api('/save-player',      { method:'POST', body:data }); // POST (upsert por player_name)
+  const getLeaderboard  = ()       => api('/get-leaderboard');                                  // GET (top 10)
+  const clearRankingEF  = ()       => api('/clear-ranking',    { method:'POST' });              // POST
+
+  // ====== UTIL: ler/escrever o jogador global do jogo (ambos os lugares) ======
+  function setGlobalPlayer(p) {
+    // 1) variável global do seu script (let currentPlayer)
+    try { currentPlayer = p; } catch(_) {}
+    // 2) espelho no window (por segurança)
+    window.currentPlayer = p;
+  }
+  function getGlobalPlayer() {
+    return window.currentPlayer || (typeof currentPlayer !== 'undefined' ? currentPlayer : null);
+  }
+
+  // ====== GANCHOS LEVES NO JOGO (sem mudar UI) ======
+  // Guardar originais para encadear
+  const _showGameDashboard = (typeof window.showGameDashboard === 'function') ? window.showGameDashboard : ()=>{};
+  const _finishChallenge   = (typeof window.finishChallenge   === 'function') ? window.finishChallenge   : null;
+
+  // startGame: carrega/cria jogador no Supabase e segue o fluxo original
+  window.startGame = async function () {
+    const nameInput  = document.getElementById('player-name-input');
+    const classInput = document.getElementById('class-group-input');
+    const player_name = (nameInput?.value || '').trim();
+    const class_group = (classInput?.value || '').trim();
+
+    if (!player_name) {
+      nameInput?.classList?.add('animate-shake','border-red-500');
+      setTimeout(()=> nameInput?.classList?.remove('animate-shake','border-red-500'), 500);
+      return;
     }
-  } catch (e) {
-    console.warn('API indisponível, iniciando local:', e);
-    window.currentPlayer = { player_name: playerName, total_score: 0, current_level: 1, badges_earned: '', challenges_completed: 0 };
-  }
-  const showGameDashboard = window.showGameDashboard || function(){};
-  showGameDashboard();
-};
 
-// FINISH CHALLENGE: sincroniza no Supabase ao finalizar
-finishChallenge = async function () {
-  if (__finishChallenge) await __finishChallenge();
-  try {
-    await apiPost('/save-player', {
-      player_name: window.currentPlayer.player_name,
-      total_score: window.currentPlayer.total_score,
-      current_level: window.currentPlayer.current_level,
-      badges_earned: window.currentPlayer.badges_earned,
-      challenges_completed: window.currentPlayer.challenges_completed
-    });
-  } catch (e) {
-    console.warn('Não foi possível sincronizar com ranking online:', e);
-  }
-};
+    try {
+      const data = await getPlayer(player_name); // { player: {...} | null }
+      if (data && data.player) {
+        setGlobalPlayer({
+          player_name     : data.player.player_name,
+          class_group     : data.player.class_group || '',
+          total_score     : data.player.total_score ?? 0,
+          current_level   : data.player.current_level ?? 1,
+          badges_earned   : data.player.badges_earned || '',
+          challenges_completed: data.player.challenges_completed ?? 0
+        });
+      } else {
+        // novo aluno
+        const p = {
+          player_name, class_group,
+          total_score: 0, current_level: 1,
+          badges_earned: '', challenges_completed: 0
+        };
+        setGlobalPlayer(p);
+        await savePlayer(p); // cria no banco
+      }
+    } catch (e) {
+      // offline: segue com local
+      setGlobalPlayer({
+        player_name, class_group,
+        total_score: 0, current_level: 1,
+        badges_earned: '', challenges_completed: 0
+      });
+      console.warn('[HDQ] Falha ao consultar jogador; seguindo local:', e.message);
+    }
 
-// LEADERBOARD: busca do Supabase
-updateLeaderboard = function () {
-  (async () => {
+    // entra no dashboard do jogo (original)
+    _showGameDashboard();
+  };
+
+  // finishChallenge: mantém a lógica original + persiste no Supabase
+  if (_finishChallenge) {
+    window.finishChallenge = async function () {
+      // 1) deixa o jogo calcular score/nível/badges como sempre
+      await _finishChallenge();
+
+      // 2) tenta persistir (sem travar a UI em caso de erro)
+      try {
+        const p = getGlobalPlayer() || {};
+        await savePlayer({// Se o modal de ranking estiver aberto, atualiza na hora
+      const lbOpen = !document.getElementById('leaderboard-modal')?.classList.contains('hidden');
+      if (lbOpen && typeof window.updateLeaderboard === 'function') {
+        await window.updateLeaderboard(); // lê do Supabase sem cache
+      }
+          player_name: p.player_name,
+          class_group: p.class_group || '',
+          total_score: p.total_score  || 0,
+          current_level: p.current_level || 1,
+          badges_earned: p.badges_earned || '',
+          challenges_completed: p.challenges_completed || 0
+        });
+// ADICIONE ESTAS LINHAS ▼▼▼
+      const lbOpen = !document.getElementById('leaderboard-modal')?.classList.contains('hidden');
+      if (lbOpen && typeof window.updateLeaderboard === 'function') {
+        await window.updateLeaderboard(); // lê do Supabase e já reflete a pontuação
+      }
+      // ▲▲▲
+
+      } catch (e) {
+        console.warn('[HDQ] Falha ao salvar após desafio:', e.message);
+      }
+    };
+  }
+
+  // updateLeaderboard: lê só do Supabase (top 10)
+  window.updateLeaderboard = async function () {
     const list = document.getElementById('leaderboard-list');
     try {
-      const res = await apiGet('/get-leaderboard');
-      const sorted = res.players || [];
-      if (sorted.length === 0) {
+      const data = await getLeaderboard();        // { players: [...] }
+      const players = Array.isArray(data?.players) ? data.players : [];
+      if (!players.length) {
         list.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>';
         return;
       }
-      list.innerHTML = sorted.map((player, index) => {
-        const medals = ['🥇','🥈','🥉'];
-        const medal = medals[index] || `#${index+1}`;
-        const isCurrentPlayer = window.currentPlayer && player.player_name === window.currentPlayer.player_name;
-        return `
- <div class="flex items-center gap-4 p-4 rounded-lg ${isCurrentPlayer ? 'bg-emerald-900/30 border border-emerald-500/50' : 'bg-slate-800/50'}">
-   <span class="text-2xl w-10 text-center">${medal}</span>
-   <div class="flex-1">
-     <p class="font-bold ${isCurrentPlayer ? 'text-emerald-400' : 'text-white'}">${player.player_name}</p>
-     <p class="text-sm text-slate-400">Nível ${player.current_level || 1} • ${player.challenges_completed || 0} desafios</p>
-   </div>
-   <div class="text-right">
-     <p class="font-orbitron text-xl text-cyan-400">${player.total_score || 0}</p>
-     <p class="text-xs text-slate-500">XP</p>
-   </div>
- </div>`;
-      }).join('');
-    } catch (e) {
-      console.error('Erro ao carregar ranking online', e);
-      list.innerHTML = '<p class="text-red-400 text-center py-8">Não foi possível carregar o ranking online.</p>';
-    }
-  })();
-};
-</script>
-
- 
-<script>
-// ===== SUPABASE INTEGRAÇÃO + TURMA + RANKING ONLINE =====
-const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-
-async function apiGet(path) {
-  const res = await fetch(`${SUPABASE_BASE}${path}`);
-  if (!res.ok) throw new Error('API GET failed');
-  return res.json();
-}
-async function apiPost(path, data, headers = {}) {
-  const res = await fetch(`${SUPABASE_BASE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify(data || {})
-  });
-  if (!res.ok) throw new Error('API POST failed');
-  return res.json();
-}
-
-// Injeta campo de TURMA via JS para não depender do HTML original
-(function injectClassGroupField(){
-  const parent = document.querySelector('#main-menu .glass-effect');
-  if (!parent || document.getElementById('class-group-input')) return;
-  const div = document.createElement('div');
-  div.className = 'mb-2';
-  div.innerHTML = `\n    <label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">TURMA</label>\n    <input type="text" id="class-group-input" placeholder="Ex.: T-101" class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">\n  `;
-  const nameBlock = parent.querySelector('.mb-6');
-  if (nameBlock) nameBlock.after(div); else parent.appendChild(div);
-})();
-
-// Direciona a "nuvem" para Supabase
-window.savePlayerToCloud = async function(player){
-  try {
-    await apiPost('/save-player', {
-      player_name: player.player_name,
-      total_score: player.total_score || 0,
-      current_level: player.current_level || 1,
-      badges_earned: player.badges_earned || '',
-      challenges_completed: player.challenges_completed || 0,
-      class_group: player.class_group || ''
-    });
-  } catch(e){ console.warn('[savePlayerToCloud] falhou', e); }
-  try { savePlayersToLocalStorage && savePlayersToLocalStorage(); } catch {}
-};
-
-// Overrides principais
-const __finishChallenge = (typeof finishChallenge === 'function') ? finishChallenge : null;
-
-startGame = async function(){
-  const nameInput = document.getElementById('player-name-input');
-  const classInput = document.getElementById('class-group-input');
-  const playerName = nameInput?.value?.trim();
-  const classGroup = classInput?.value?.trim() || '';
-  if (!playerName){
-    nameInput?.classList?.add('animate-shake','border-red-500');
-    setTimeout(()=>nameInput?.classList?.remove('animate-shake','border-red-500'),500);
-    return;
-  }
-  try{
-    const res = await apiGet(`/get-player?name=${encodeURIComponent(playerName)}`);
-    if (res && res.player){
-      window.currentPlayer = res.player;
-    } else {
-      window.currentPlayer = { player_name: playerName, total_score: 0, current_level: 1, badges_earned: '', challenges_completed: 0, class_group: classGroup };
-      try { await apiPost('/save-player', window.currentPlayer); } catch(e){ console.warn('Falha ao criar jogador online', e); }
-    }
-  } catch(e){
-    console.warn('API indisponível, iniciando local', e);
-    window.currentPlayer = { player_name: playerName, total_score: 0, current_level: 1, badges_earned: '', challenges_completed: 0, class_group: classGroup };
-  }
-  (window.showGameDashboard || function(){})();
-};
-
-finishChallenge = async function(){
-  if (__finishChallenge) await __finishChallenge();
-  try{
-    await apiPost('/save-player', {
-      player_name: window.currentPlayer.player_name,
-      total_score: window.currentPlayer.total_score,
-      current_level: window.currentPlayer.current_level,
-      badges_earned: window.currentPlayer.badges_earned,
-      challenges_completed: window.currentPlayer.challenges_completed,
-      class_group: window.currentPlayer.class_group || ''
-    });
-  } catch(e){ console.warn('Sync após desafio falhou', e); }
-};
-
-updateLeaderboard = function(){
-  (async()=>{
-    const list = document.getElementById('leaderboard-list');
-    try {
-      const res = await apiGet('/get-leaderboard');
-      const sorted = res.players || [];
-      if (sorted.length === 0){ list.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>'; return; }
-      list.innerHTML = sorted.map((player, idx)=>{
-        const medals=['🥇','🥈','🥉']; const medal = medals[idx] || `#${idx+1}`;
-        const isMe = window.currentPlayer && player.player_name === window.currentPlayer.player_name;
-        const turma = player.class_group ? ` • Turma ${player.class_group}` : '';
-        return `\n <div class="flex items-center gap-4 p-4 rounded-lg ${isMe ? 'bg-emerald-900/30 border border-emerald-500/50' : 'bg-slate-800/50'}">\n  <span class="text-2xl w-10 text-center">${medal}</span>\n  <div class="flex-1">\n   <p class="font-bold ${isMe ? 'text-emerald-400' : 'text-white'}">${player.player_name}</p>\n   <p class="text-sm text-slate-400">Nível ${player.current_level || 1} • ${player.challenges_completed || 0} desafios${turma}</p>\n  </div>\n  <div class="text-right">\n   <p class="font-orbitron text-xl text-cyan-400">${player.total_score || 0}</p>\n   <p class="text-xs text-slate-500">XP</p>\n  </div>\n </div>`;
-      }).join('');
-    } catch(e){ console.error('Erro ranking online', e); list.innerHTML = '<p class="text-red-400 text-center py-8">Não foi possível carregar o ranking online.</p>'; }
-  })();
-};
-
- catch(e){ showResultModal && showResultModal('⚠️','Ação negada','Chave inválida ou erro no servidor.',''); }
-  })();
-};
-
-// Força salvar antes de abrir o ranking + auto-save periódico
-(function hookLeaderboardButton(){
-  function attach(){
-    const btn = document.getElementById('leaderboard-btn');
-    if (!btn || btn.__hookedForceSave) return !!btn;
-    btn.addEventListener('click', async ()=>{
-      try{
-        const p = window.currentPlayer; if (!p || !p.player_name) return;
-        await apiPost('/save-player', {
-          player_name:p.player_name, total_score:p.total_score||0, current_level:p.current_level||1,
-          badges_earned:p.badges_earned||'', challenges_completed:p.challenges_completed||0, class_group:p.class_group||''
-        });
-      } catch{}
-    }, { capture:true });
-    btn.__hookedForceSave = true; return true;
-  }
-  if (!attach()){
-    let t=0; const iv=setInterval(()=>{ t++; if (attach() || t>10) clearInterval(iv); }, 500);
-  }
-})();
-
-(function setupAutoSave(){
-  const INTERVAL_MS = 4000; let lastSig = null;
-  async function autoSave(){
-    try{
-      const p = window.currentPlayer; if (!p || !p.player_name) return;
-      const sig = [p.player_name,p.total_score,p.current_level,p.challenges_completed,p.badges_earned,p.class_group||''].join('|');
-      if (sig === lastSig) return;
-      await apiPost('/save-player', {
-        player_name:p.player_name, total_score:p.total_score||0, current_level:p.current_level||1,
-        badges_earned:p.badges_earned||'', challenges_completed:p.challenges_completed||0, class_group:p.class_group||''
-      });
-      lastSig = sig;
-    } catch{}
-  }
-  setInterval(autoSave, INTERVAL_MS);
-  document.addEventListener('visibilitychange', ()=>{ if (document.hidden) autoSave(); });
-  window.addEventListener('beforeunload', ()=>{
-    try{
-      const p = window.currentPlayer; if (!p || !p.player_name) return;
-      const body = JSON.stringify({ player_name:p.player_name, total_score:p.total_score||0, current_level:p.current_level||1, badges_earned:p.badges_earned||'', challenges_completed:p.challenges_completed||0, class_group:p.class_group||'' });
-      navigator.sendBeacon?.(`${SUPABASE_BASE}/save-player`, new Blob([body],{type:'application/json'}));
-    } catch{}
-  });
-})();
-</script>
-<script>
-// Gatilho direto: criar/atualizar jogador no Supabase ao clicar "INICIAR MISSÃO"
-(function forceCreateOnStart(){
-  const btn = document.getElementById('start-game-btn');
-  if (!btn) return;
-  btn.addEventListener('click', async () => {
-    try {
-      const nameInput  = document.getElementById('player-name-input');
-      const classInput = document.getElementById('class-group-input');
-      const player_name = (nameInput?.value || '').trim();
-      const class_group = (classInput?.value || '').trim();
-      if (!player_name) return;
-
-      // Usa a mesma base das suas Edge Functions (já definida no arquivo)
-      const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-
-      await fetch(`${SUPABASE_BASE}/save-player`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          player_name,
-          total_score: 0,
-          current_level: 1,
-          badges_earned: '',
-          challenges_completed: 0,
-          class_group
-        })
-      });
-      // não mostra nada na tela — só garante o registro no banco
-    } catch(e) {
-      // silencioso
-    }
-  }, { capture: true });
-})();
-</script>
-  <script>
-// Intercepta o botão "Limpar" para chamar a Edge Function clear-ranking (e bloqueia o handler antigo)
-(function interceptClearButton(){
-  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-
-  function attach(){
-    const btn = document.getElementById('clear-ranking-btn');
-    if (!btn || btn.__supabaseHook) return !!btn;
-
-    btn.addEventListener('click', async (ev) => {
-      try {
-        // Bloqueia o listener antigo (local) e garante que só este rode
-        ev.stopImmediatePropagation();
-        ev.preventDefault();
-
-        const key = prompt('Para limpar o ranking geral, digite a CHAVE DE ADMINISTRADOR (ou deixe vazio):') || '';
-
-        const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, {
-          method: 'POST',
-          headers: { 'x-admin-key': key }
-        });
-
-        if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
-
-        // Feedback e atualização de UI
-        if (typeof hideLeaderboard === 'function') hideLeaderboard();
-        if (typeof updateLeaderboard === 'function') updateLeaderboard();
-        if (typeof showResultModal === 'function') {
-          showResultModal('🗑️','Ranking Limpo','Todos os dados foram removidos do banco.','');
-        }
-      } catch (e) {
-        if (typeof showResultModal === 'function') {
-          showResultModal('⚠️','Ação negada','Chave inválida ou erro no servidor.','');
-        }
-        console.warn('clear-ranking erro', e);
-      }
-    }, { capture: true }); // <- captura o clique antes do handler antigo
-
-    btn.__supabaseHook = true;
-    return true;
-  }
-
-  if (!attach()) {
-    // Se o botão ainda não existe (UI ainda montando), tentar por alguns instantes
-    let tries = 0;
-    const iv = setInterval(() => {
-      tries++;
-      if (attach() || tries > 10) clearInterval(iv);
-    }, 500);
-  }
-})();
-</script>
-  <script>
-// Substitui o comportamento do botão "Limpar" para NÃO pedir chave (enquanto estiver sem proteção)
-(function noKeyClear(){
-  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-  const btn = document.getElementById('clear-ranking-btn');
-  if (!btn) return;
-  btn.addEventListener('click', async (ev) => {
-    try {
-      ev.stopImmediatePropagation?.(); ev.preventDefault?.();
-      const r = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method:'POST' });
-      if (!r.ok) throw new Error('Erro ao limpar');
-      if (typeof hideLeaderboard === 'function') hideLeaderboard();
-      if (typeof updateLeaderboard === 'function') updateLeaderboard();
-      if (typeof showResultModal === 'function') {
-        showResultModal('🗑️','Ranking Limpo','Dados removidos do banco com sucesso!','');
-      }
-    } catch (e) {
-      if (typeof showResultModal === 'function') {
-        showResultModal('⚠️','Falha ao limpar','Tente novamente em alguns segundos.','');
-      }
-      console.warn('clear-ranking', e);
-    }
-  }, { capture:true });
-})();
-</script>
-  <script>
-// LIMPAR SEM CHAVE (enquanto a function estiver pública)
-(function noKeyClear(){
-  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-  const btn = document.getElementById('clear-ranking-btn');
-  if (!btn) return;
-
-  // Intercepta antes de qualquer handler antigo
-  btn.addEventListener('click', async (ev) => {
-    try {
-      ev.stopImmediatePropagation?.();
-      ev.preventDefault?.();
-
-      const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method: 'POST' });
-      if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
-
-      // Fecha e atualiza o ranking
-      if (typeof hideLeaderboard === 'function') hideLeaderboard();
-      if (typeof updateLeaderboard === 'function') updateLeaderboard();
-      if (typeof showResultModal === 'function') {
-        showResultModal('🗑️', 'Ranking Limpo', 'Dados removidos do banco com sucesso!', '');
-      }
-    } catch (e) {
-      if (typeof showResultModal === 'function') {
-        showResultModal('⚠️', 'Falha ao limpar', 'Tente novamente em alguns segundos.', '');
-      }
-      console.warn('clear-ranking', e);
-    }
-  }, { capture: true });
-})();
-</script>
-  <script>
-// ===== LIMPAR SEM CHAVE (força sem prompt) =====
-(function forceNoKeyClear(){
-  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-
-  // 1) Sobrescreve a função global para não pedir chave
-  window.clearRanking = async function () {
-    try {
-      const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method: 'POST' });
-      if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
-      // Fecha e atualiza o ranking
-      if (typeof hideLeaderboard === 'function') hideLeaderboard();
-      if (typeof updateLeaderboard === 'function') updateLeaderboard();
-      if (typeof showResultModal === 'function') {
-        showResultModal('🗑️', 'Ranking Limpo', 'Dados removidos do banco com sucesso!', '');
-      }
-    } catch (e) {
-      if (typeof showResultModal === 'function') {
-        showResultModal('⚠️', 'Falha ao limpar', 'Tente novamente em alguns segundos.', '');
-      }
-      console.warn('clear-ranking', e);
-    }
-  };
-
-  // 2) Intercepta o clique do botão e impede qualquer handler antigo que exiba prompt
-  function attach() {
-    const btn = document.getElementById('clear-ranking-btn');
-    if (!btn || btn.__noKeyHook) return !!btn;
-
-    btn.addEventListener('click', async (ev) => {
-      ev.stopImmediatePropagation?.(); // bloqueia o listener antigo
-      ev.preventDefault?.();
-      try { await window.clearRanking(); } catch {}
-    }, { capture: true }); // captura ANTES do handler antigo
-
-    btn.__noKeyHook = true;
-    return true;
-  }
-
-  if (!attach()) {
-    // se o botão ainda não existir, tenta por alguns instantes
-    let tries = 0;
-    const iv = setInterval(() => { tries++; if (attach() || tries > 10) clearInterval(iv); }, 500);
-  }
-})();
-</script>
-  <script>
-// ===== LIMPAR SEM CHAVE (força SEM prompt e SEM handlers antigos) =====
-(function hardNoKeyClear(){
-  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-
-  // 1) Substitui a função global para não pedir chave
-  window.clearRanking = async function () {
-    try {
-      const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method: 'POST' });
-      if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
-      // Fecha e atualiza o ranking
-      if (typeof hideLeaderboard === 'function') hideLeaderboard();
-      if (typeof updateLeaderboard === 'function') updateLeaderboard();
-      if (typeof showResultModal === 'function') {
-        showResultModal('🗑️', 'Ranking Limpo', 'Dados removidos do banco com sucesso!', '');
-      }
-    } catch (e) {
-      if (typeof showResultModal === 'function') {
-        showResultModal('⚠️', 'Falha ao limpar', 'Tente novamente em alguns segundos.', '');
-      }
-      console.warn('clear-ranking', e);
-    }
-  };
-
-  // 2) Remove event listeners antigos do botão (clonando o elemento)
-  function stripListenersAndWire() {
-    const oldBtn = document.getElementById('clear-ranking-btn');
-    if (!oldBtn) return false;
-
-    const newBtn = oldBtn.cloneNode(true); // clona sem os listeners
-    oldBtn.parentNode.replaceChild(newBtn, oldBtn);
-
-    // 3) Liga nosso clique SEM prompt e bloqueia qualquer outro handler
-    newBtn.addEventListener('click', async (ev) => {
-      ev.stopImmediatePropagation?.();
-      ev.preventDefault?.();
-      try { await window.clearRanking(); } catch {}
-    }, { capture: true });
-
-    // marca para não repetir
-    newBtn.__noKeyHook = true;
-    return true;
-  }
-
-  // tenta agora; se o botão ainda não existir, re-tenta por alguns instantes
-  if (!stripListenersAndWire()) {
-    let tries = 0;
-    const iv = setInterval(() => {
-      tries++;
-      if (stripListenersAndWire() || tries > 10) clearInterval(iv);
-    }, 500);
-  }
-})();
-</script>
-  <style>
-/* Destaque da linha do aluno no ranking */
-@keyframes rowGlow {
-  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
-  60%  { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
-  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
-}
-.row-highlight {
-  border: 1px solid rgba(16,185,129,.6) !important;
-  box-shadow: 0 0 0 3px rgba(16,185,129,.35);
-  animation: rowGlow 2s ease-out infinite;
-}
-</style>
-
-<script>
-/* ===========================================================
-   SALVAR A CADA ACERTO — GANCHO NO "CONTINUAR" (ES5, compatível)
-   =========================================================== */
-(function saveOnContinueES5(){
-  var SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-  var lastSavedStamp = null; // para não salvar duas vezes a mesma pergunta
-
-  function $(id){ return document.getElementById(id); }
-  function getText(el){ return el ? (el.textContent || el.innerText || '') : ''; }
-
-  function isRankingOpen(){
-    var m = $('leaderboard-modal');
-    return m && m.className.indexOf('hidden') === -1;
-  }
-
-  function updateHUD(p){
-    var scoreEl = $('score-display');
-    var levelEl = $('level-display');
-    var xpEl    = $('xp-display');
-    var bar     = $('xp-bar');
-    if (scoreEl) scoreEl.textContent = p.total_score || 0;
-    if (levelEl) levelEl.textContent = p.current_level || 1;
-    var xpForLevel = (p.total_score || 0) % 1000;
-    if (xpEl)  xpEl.textContent = xpForLevel + '/1000 XP';
-    if (bar)   bar.style.width  = ((xpForLevel / 1000) * 100) + '%';
-  }
-
-  function saveToSupabase(p, cb){
-    var body = {
-      player_name: p.player_name,
-      total_score: p.total_score || 0,
-      current_level: p.current_level || 1,
-      badges_earned: p.badges_earned || '',
-      challenges_completed: p.challenges_completed || 0,
-      class_group: p.class_group || ''
-    };
-
-    // Se seu arquivo já tem apiPost, use-o
-    if (typeof window.apiPost === 'function') {
-      window.apiPost('/save-player', body).then(function(){ if(cb) cb(200); }).catch(function(){ if(cb) cb(500); });
-      return;
-    }
-
-    // Fallback com fetch (ES5-friendly)
-    fetch(SUPABASE_BASE + '/save-player', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify(body)
-    }).then(function(r){ if(cb) cb(r.status); }).catch(function(){ if(cb) cb(500); });
-  }
-
-  function refreshLeaderboardAndHighlight(){
-    if (!isRankingOpen()) return;
-    if (typeof window.updateLeaderboard === 'function') {
-      window.updateLeaderboard();
-      setTimeout(function(){
-        try {
-          var list = $('leaderboard-list');
-          var name = window.currentPlayer && window.currentPlayer.player_name;
-          if (!list || !name) return;
-          var i, card, cards = list.children;
-          for (i=0; i<cards.length; i++){
-            card = cards[i];
-            card.classList.remove('row-highlight');
-            if ((card.textContent || '').indexOf(name) !== -1) {
-              card.classList.add('row-highlight');
-              card.scrollIntoView({ block:'nearest', behavior:'smooth' });
-            }
-          }
-        } catch (e) {}
-      }, 150);
-    }
-  }
-
-  function gainedFromModal(){
-    var el = $('result-points');
-    var txt = getText(el);                  // ex.: "+100 XP"
-    var m = txt.match(/\+(\d+)/);
-    return m ? parseInt(m[1], 10) : 0;
-  }
-
-  function currentStamp(){
-    // usa o índice global se existir; senão, timestamp
-    if (typeof window.currentQuestionIndex === 'number') return 'q_' + window.currentQuestionIndex;
-    return 't_' + Date.now();
-  }
-
-  function handler(ev){
-    // calculo de stamp para evitar duplicado
-    var stamp = currentStamp();
-    if (stamp === lastSavedStamp) return;
-
-    // pontos do modal
-    var gained = gainedFromModal();
-    if (!gained) return; // se errou a questão, não há pontos a salvar
-
-    // garante currentPlayer
-    if (!window.currentPlayer) {
-      var nameInput  = $('player-name-input');
-      var classInput = $('class-group-input');
-      window.currentPlayer = {
-        player_name: (nameInput && nameInput.value || '').trim() || 'Aluno',
-        total_score: 0,
-        current_level: 1,
-        badges_earned: '',
-        challenges_completed: 0,
-        class_group: (classInput && classInput.value || '').trim() || ''
-      };
-    }
-
-    var p = window.currentPlayer;
-    if (!p.player_name) return;
-
-    // soma imediatamente e recalcula nível
-    p.total_score = (p.total_score || 0) + gained;
-    p.current_level = Math.max(p.current_level || 1, Math.floor((p.total_score || 0)/1000) + 1);
-
-    updateHUD(p);
-    saveToSupabase(p, function(){ refreshLeaderboardAndHighlight(); });
-
-    lastSavedStamp = stamp;
-  }
-
-  function attach(){
-    var btn = $('result-continue');
-    if (!btn) return false;
-    if (btn.__savedHook) return true;
-
-    // remove event listeners antigos clonando o botão
-    var clone = btn.cloneNode(true);
-    btn.parentNode.replaceChild(clone, btn);
-
-    // nosso handler roda em CAPTURE para acontecer antes do fluxo interno
-    clone.addEventListener('click', handler, true);
-    clone.__savedHook = true;
-    return true;
-  }
-
-  if (!attach()) {
-    var tries = 0;
-    var iv = setInterval(function(){
-      tries++;
-      if (attach() || tries > 20) clearInterval(iv);
-    }, 400);
-  }
-})();
-</script>
-``
-  <style>
-/* Destaque da linha do aluno no ranking */
-@keyframes rowGlow {
-  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
-  60%  { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
-  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
-}
-.row-highlight {
-  border: 1px solid rgba(16,185,129,.6) !important;
-  box-shadow: 0 0 0 3px rgba(16,185,129,.35);
-  animation: rowGlow 2s ease-out infinite;
-}
-</style>
-
-<script>
-/* ===========================================================
-   FIX CONTINUAR PRESO + SALVAR A CADA ACERTO (ES5 compatível)
-   - Recria o botão "CONTINUAR" sem listeners antigos
-   - CAPTURE: salva pontos no Supabase
-   - BUBBLE: chama continueAfterResult() para prosseguir o jogo
-   =========================================================== */
-(function fixContinueAndLiveSave(){
-  var SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-
-  function $(id){ return document.getElementById(id); }
-  function txt(el){ return el ? (el.textContent || el.innerText || '') : ''; }
-
-  function gainedFromModal(){
-    var t = txt($('result-points'));           // ex.: "+100 XP"
-    var m = t.match(/\+(\d+)/);
-    return m ? parseInt(m[1], 10) : 0;
-  }
-  function isRankingOpen(){
-    var m = $('leaderboard-modal');
-    return m && m.className.indexOf('hidden') === -1;
-  }
-  function updateHUD(p){
-    var scoreEl = $('score-display');
-    var levelEl = $('level-display');
-    var xpEl    = $('xp-display');
-    var bar     = $('xp-bar');
-    if (scoreEl) scoreEl.textContent = p.total_score || 0;
-    if (levelEl) levelEl.textContent = p.current_level || 1;
-    var xp = (p.total_score || 0) % 1000;
-    if (xpEl)  xpEl.textContent = xp + '/1000 XP';
-    if (bar)   bar.style.width  = ((xp / 1000) * 100) + '%';
-  }
-  function saveToSupabase(p, done){
-    var body = {
-      player_name: p.player_name,
-      total_score: p.total_score || 0,
-      current_level: p.current_level || 1,
-      badges_earned: p.badges_earned || '',
-      challenges_completed: p.challenges_completed || 0,
-      class_group: p.class_group || ''
-    };
-    if (typeof window.apiPost === 'function') {
-      window.apiPost('/save-player', body).then(function(){ if(done) done(200); }).catch(function(){ if(done) done(500); });
-      return;
-    }
-    fetch(SUPABASE_BASE + '/save-player', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify(body)
-    }).then(function(r){ if(done) done(r.status); }).catch(function(){ if(done) done(500); });
-  }
-  function refreshLeaderboardAndHighlight(){
-    if (!isRankingOpen()) return;
-    if (typeof window.updateLeaderboard === 'function') {
-      window.updateLeaderboard();
-      setTimeout(function(){
-        try {
-          var list = $('leaderboard-list');
-          var name = window.currentPlayer && window.currentPlayer.player_name;
-          if (!list || !name) return;
-          var i, cards = list.children, card, found = null;
-          for (i=0;i<cards.length;i++){
-            card = cards[i];
-            card.classList.remove('row-highlight');
-            if ((card.textContent || '').indexOf(name) !== -1) { found = card; }
-          }
-          if (found) {
-            found.classList.add('row-highlight');
-            found.scrollIntoView({ block:'nearest', behavior:'smooth' });
-          }
-        } catch(e){}
-      }, 150);
-    }
-  }
-
-  // Evita salvar 2x a mesma pergunta
-  var lastSavedKey = null;
-  function currentQuestionKey(){
-    if (typeof window.currentQuestionIndex === 'number' && window.currentChallenge) {
-      return 'q_' + window.currentChallenge.id + '_' + window.currentQuestionIndex;
-    }
-    return 't_' + Date.now();
-  }
-
-  function captureSaveHandler(/*ev*/){
-    // calcula uma chave da questão atual
-    var key = currentQuestionKey();
-    if (key === lastSavedKey) return;
-
-    var gained = gainedFromModal();
-    if (!gained) return; // sem pontos → não salva
-
-    if (!window.currentPlayer) {
-      var nameInput  = $('player-name-input');
-      var classInput = $('class-group-input');
-      window.currentPlayer = {
-        player_name: (nameInput && nameInput.value || 'Aluno').trim(),
-        total_score: 0, current_level: 1,
-        badges_earned: '', challenges_completed: 0,
-        class_group: (classInput && classInput.value || '').trim()
-      };
-    }
-    var p = window.currentPlayer;
-    if (!p.player_name) return;
-
-    // Soma imediatamente e recalcula nível
-    p.total_score = (p.total_score || 0) + gained;
-    p.current_level = Math.max(p.current_level || 1, Math.floor((p.total_score || 0)/1000) + 1);
-
-    updateHUD(p);
-    saveToSupabase(p, function(){ refreshLeaderboardAndHighlight(); });
-    lastSavedKey = key;
-  }
-
-  function bubbleProceedHandler(ev){
-    try {
-      if (typeof window.continueAfterResult === 'function') {
-        // chama o fluxo original para fechar o modal e ir à próxima pergunta
-        window.continueAfterResult(ev);
-      }
-    } catch(e){ console.warn('continueAfterResult error', e); }
-  }
-
-  function wire(){
-    var btn = $('result-continue');
-    if (!btn) return false;
-
-    // Clona para REMOVER listeners antigos que podem ter ficado presos
-    var clone = btn.cloneNode(true);
-    btn.parentNode.replaceChild(clone, btn);
-
-    // 1) CAPTURE → salva pontos antes do jogo avançar
-    clone.addEventListener('click', captureSaveHandler, true);
-
-    // 2) BUBBLE  → prossegue o jogo SEM impedir propagação
-    clone.addEventListener('click', bubbleProceedHandler, false);
-
-    clone.__fixed = true;
-    return true;
-  }
-
-  // Tenta ligar agora; se ainda não existir, re-tenta por alguns instantes
-  if (!wire()) {
-    var tries = 0;
-    var iv = setInterval(function(){
-      tries++;
-      if (wire() || tries > 20) clearInterval(iv);
-    }, 400);
-  }
-})();
-</script>
-  <style>
-/* Destaque da linha do aluno no ranking (UI) */
-@keyframes rowGlow {
-  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
-  60%  { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
-  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
-}
-.row-highlight {
-  border: 1px solid rgba(16,185,129,.6) !important;
-  box-shadow: 0 0 0 3px rgba(16,185,129,.35);
-  animation: rowGlow 2s ease-out infinite;
-}
-</style>
-
-<script>
-/* ===========================================================
-   1) SALVAR UMA ÚNICA VEZ POR QUESTÃO + AVANÇAR O JOGO (ES5)
-   =========================================================== */
-(function fixContinueAndLiveSave(){
-  var SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-  var lastSavedKey = null; // evita salvar 2x a mesma questão
-
-  function $(id){ return document.getElementById(id); }
-  function txt(el){ return el ? (el.textContent || el.innerText || '') : ''; }
-
-  function gainedFromModal(){
-    var t = txt($('result-points')); // ex.: "+150 XP"
-    var m = t.match(/\+(\d+)/);
-    return m ? parseInt(m[1], 10) : 0;
-  }
-  function currentKey(){
-    if (typeof window.currentQuestionIndex === 'number' && window.currentChallenge) {
-      return 'q_' + window.currentChallenge.id + '_' + window.currentQuestionIndex;
-    }
-    return 't_' + Date.now();
-  }
-  function updateHUD(p){
-    var scoreEl = $('score-display');
-    var levelEl = $('level-display');
-    var xpEl    = $('xp-display');
-    var bar     = $('xp-bar');
-    if (scoreEl) scoreEl.textContent = p.total_score || 0;
-    if (levelEl) levelEl.textContent = p.current_level || 1;
-    var xp = (p.total_score || 0) % 1000;
-    if (xpEl)  xpEl.textContent = xp + '/1000 XP';
-    if (bar)   bar.style.width  = ((xp / 1000) * 100) + '%';
-  }
-  function saveToSupabase(p, done){
-    var body = {
-      player_name: p.player_name,
-      total_score: p.total_score || 0,
-      current_level: p.current_level || 1,
-      badges_earned: p.badges_earned || '',
-      challenges_completed: p.challenges_completed || 0,
-      class_group: p.class_group || ''
-    };
-    if (typeof window.apiPost === 'function') {
-      window.apiPost('/save-player', body).then(function(){ if(done) done(200); }).catch(function(){ if(done) done(500); });
-      return;
-    }
-    fetch(SUPABASE_BASE + '/save-player', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
-    }).then(function(r){ if(done) done(r.status); }).catch(function(){ if(done) done(500); });
-  }
-  function refreshLeaderboardAndHighlight(){
-    var lb = $('leaderboard-modal');
-    if (!lb || lb.className.indexOf('hidden') !== -1) return;
-    if (typeof window.updateLeaderboard === 'function') {
-      window.updateLeaderboard();
-      setTimeout(function(){
-        try {
-          var list = $('leaderboard-list');
-          var name = window.currentPlayer && window.currentPlayer.player_name;
-          if (!list || !name) return;
-          var i, cards = list.children, card, found = null;
-          for (i=0;i<cards.length;i++){
-            card = cards[i];
-            card.classList.remove('row-highlight');
-            if ((card.textContent || '').indexOf(name) !== -1) found = card;
-          }
-          if (found) { found.classList.add('row-highlight'); found.scrollIntoView({block:'nearest', behavior:'smooth'}); }
-        } catch(e){}
-      }, 150);
-    }
-  }
-
-  function captureSave(ev){
-    var key = currentKey();
-    if (key === lastSavedKey) return;
-
-    var gained = gainedFromModal();
-    if (!gained) return; // se errou, não
-
-     <script>
-/* ===========================================================
-   2) PERSISTIR CONCLUSÃO DO DESAFIO + BADGES (sem re-somar score)
-   =========================================================== */
-(function finalizePersist(){
-  var SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-
-  function $(id){ return document.getElementById(id); }
-  function uniqPush(arr, id){ if (id && arr.indexOf(id) === -1) arr.push(id); return arr; }
-
-  function saveToSupabase(p, done){
-    var body = {
-      player_name: p.player_name,
-      total_score: p.total_score || 0,
-      current_level: p.current_level || 1,
-      badges_earned: p.badges_earned || '',
-      challenges_completed: p.challenges_completed || 0,
-      class_group: p.class_group || ''
-    };
-    if (typeof window.apiPost === 'function') {
-      window.apiPost('/save-player', body).then(function(){ if(done) done(200); }).catch(function(){ if(done) done(500); });
-      return;
-    }
-    fetch(SUPABASE_BASE + '/save-player', {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
-    }).then(function(r){ if(done) done(r.status); }).catch(function(){ if(done) done(500); });
-  }
-
-  var origRenderSel = window.renderChallengeSelection || function(){};
-  var origUpdateHUD = window.updatePlayerDisplay || function(){};
-
-  // Substitui o finishChallenge apenas para badges + challenges_completed
-  window.finishChallenge = function () {
-    var p = window.currentPlayer || {};
-    var ch = window.currentChallenge || {};
-    var gainedTotalAlready = p.total_score || 0; // já foi somado por questão
-
-    // incrementa desafios concluídos
-    var newCC = (p.challenges_completed || 0) + 1;
-
-    // badges
-    var badges = (p.badges_earned || '').split(',').filter(function(b){return b;});
-    uniqPush(badges, ch.id); // badge do desafio
-    if (newCC === 1) uniqPush(badges, 'first-challenge');
-    if (typeof window.challengeScore === 'number' && ch && ch.xpReward && window.challengeScore === ch.xpReward)
-      uniqPush(badges, 'perfect-score');
-    if (p.current_level >= 5) uniqPush(badges, 'level-5');
-    if (window.challenges && window.challenges.length && newCC >= window.challenges.length)
-      uniqPush(badges, 'all-challenges');
-
-    // aplica
-    p.challenges_completed = newCC;
-    p.badges_earned = badges.join(',');
-
-    // salva
-    saveToSupabase(p, function(){});
-
-    // volta para a lista de desafios
-    var area = $('challenge-area'), sel = $('challenge-selection'), bad = $('badges-section');
-    if (area) area.classList.add('hidden');
-    if (sel)  sel.classList.remove('hidden');
-    if (bad)  bad.classList.remove('hidden');
-
-    // atualiza HUD e cards
-    try { origUpdateHUD(); } catch(e){}
-    try { origRenderSel(); } catch(e){}
-  };
-})();
-</script>
-
-  <script>
-/* ===========================================================
-   3) updateLeaderboard limpo (só do Supabase) + destaque da linha
-   =========================================================== */
-(function cleanLeaderboard(){
-  var SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
-
-  window.updateLeaderboard = function(){
-    (function(){
-      var list = document.getElementById('leaderboard-list');
-      function setHTML(h){ if (list) list.innerHTML = h; }
-
-      function render(players){
-        if (!players || !players.length) {
-          setHTML('<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>');
-          return;
-        }
-        var name = (window.currentPlayer && window.currentPlayer.player_name) || '';
-        var html = '';
-        for (var i=0;i<players.length;i++){
-          var player = players[i];
-          var medal  = (i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1));
-          var isMe   = name && player.player_name === name;
-          var turma  = player.class_group ? (' • Turma ' + player.class_group) : '';
-          html += ''
-            + '<div class="flex items-center gap-4 p-4 rounded-lg '
-            + (isMe ? 'bg-emerald-900/30 border border-emerald-500/50 row-highlight' : 'bg-slate-800/50')
-            + '" data-name="' + player.player_name + '">'
-            +   '<span class="text-2xl w-10 text-center">' + medal + '</span>'
-            +   '<div class="flex-1">'
-            +     '<p class="font-bold ' + (isMe ? 'text-emerald-400' : 'text-white') + '">' + player.player_name + '</p>'
-            +     '<p class="text-sm text-slate-400">Nível ' + (player.current_level||1) + ' • ' + (player.challenges_completed||0) + ' desafios' + turma + '</p>'
-            +   '</div>'
-            +   '<div class="text-right">'
-            +     '<p class="font-orbitron text-xl text-cyan-400">' + (player.total_score||0) + '</p>'
-            +     '<p class="text-xs text-slate-500">XP</p>'
-            +   '</div>'
-            + '</div>';
-        }
-        setHTML(html);
-      }
-
-      // usa o helper se existir; senão fetch direto
-      if (typeof window.apiGet === 'function') {
-        window.apiGet('/get-leaderboard').then(function(data){ render(data && data.players); })
-          .catch(function(){ setHTML('<p class="text-red-400 text-center py-8">Não foi possível carregar o ranking online.</p>'); });
-      } else {
-        fetch(SUPABASE_BASE + '/get-leaderboard').then(function(r){ return r.json(); })
-          .then(function(data){ render(data && data.players); })
-          .catch(function(){ setHTML('<p class="text-red-400 text-center py-8">Não foi possível carregar o ranking online.</p>'); });
-      }
-    })();
-  };
-})();
-</script>
+      const me = (getGlobalPlayer() && getGlobalPlayer().player_name) || '';
+      list.innerHTML = players.map((player, idx) => {
+        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx+1}`;
+        const isMe  = me && player.player_name === me;
+       
 </body>
-
 </html>
