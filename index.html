@@ -1676,7 +1676,7 @@
     // Initialize the app
     initializeApp();
   </script>
-  
+<script>  
 // --- CONFIGURAÇÃO GLOBAL DO SUPABASE ---
 const SB_URL = "https://pqtrsgtzrmrmjbijzqvg.supabase.co";
 const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxdHJzZ3R6cm1ybWpiaWp6cXZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MTg3NTYsImV4cCI6MjA4ODM5NDc1Nn0.RXeyQrzDxofqewTJZhBpaHOnozBNYei1Lb7Log3QRww";
@@ -1697,7 +1697,7 @@ async function syncOnline(functionName, payload) {
         return null;
     }
 }
-<script>
+
 // Interceptando o salvamento do jogo para enviar ao banco
 const originalSaveProgress = window.saveProgress;
 window.saveProgress = async function() {
