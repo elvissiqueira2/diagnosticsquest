@@ -1917,5 +1917,46 @@
   }, true);
 })();
 </script>
+  <script>
+/* Protege contra currentPlayer === null quando o dashboard abre.
+   Não muda UI; apenas cria um objeto default se ainda não existir. */
+(function guardCurrentPlayerOnDashboard(){
+  if (typeof window.showGameDashboard !== 'function') return;
+  const _show = window.showGameDashboard;
+  window.showGameDashboard = function(){
+    if (!window.currentPlayer) {
+      const name  = (document.getElementById('player-name-input')?.value || '').trim();
+      const turma = (document.getElementById('class-group-input')?.value || '').trim();
+      window.currentPlayer = {
+        player_name: name || 'Aluno',
+        class_group: turma || '',
+        total_score: 0,
+        current_level: 1,
+        badges_earned: '',
+        challenges_completed: 0
+      };
+    }
+    return _show.apply(this, arguments);
+  };
+})();
+</script>
+  <script>
+/* Garante que o clique em INICIAR MISSÃO dispare o startGame atual (com Supabase).
+   Em CAPTURE: roda antes do handler antigo e bloqueia a propagação. */
+(function hookStartMission(){
+  const btn = document.getElementById('start-game-btn');
+  if (!btn || btn.__hdqHooked) return;
+  btn.__hdqHooked = true;
+  btn.addEventListener('click', function(ev){
+    ev.stopImmediatePropagation();
+    ev.preventDefault();
+    if (typeof window.startGame === 'function') {
+      window.startGame();
+    } else {
+      console.warn('[HDQ] startGame não está disponível.');
+    }
+  }, true); // CAPTURE
+})();
+</script>
 </body>
 </html>
