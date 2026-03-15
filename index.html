@@ -1685,6 +1685,7 @@
 
   // Cliente simples para Edge Functions com headers corretos
 // (SUBSTITUI a função api existente)
+// SUBSTITUA a função api existente por esta (não cole <script> aqui!)
 async function api(path, { method='GET', body=null, signal } = {}) {
   // 1) Cache-busting: para toda leitura GET, acrescenta ?_=<timestamp>
   const url = method === 'GET'
@@ -1693,7 +1694,7 @@ async function api(path, { method='GET', body=null, signal } = {}) {
 
   const opts = {
     method,
-    cache: 'no-store', // 2) Avisa explicitamente o navegador para não armazenar
+    cache: 'no-store', // 2) diz ao navegador para não armazenar cache
     headers: {
       'apikey'      : SUPABASE_KEY,
       'Authorization': `Bearer ${SUPABASE_KEY}`
@@ -1788,7 +1789,11 @@ async function api(path, { method='GET', body=null, signal } = {}) {
       // 2) tenta persistir (sem travar a UI em caso de erro)
       try {
         const p = getGlobalPlayer() || {};
-        await savePlayer({
+        await savePlayer({// Se o modal de ranking estiver aberto, atualiza na hora
+      const lbOpen = !document.getElementById('leaderboard-modal')?.classList.contains('hidden');
+      if (lbOpen && typeof window.updateLeaderboard === 'function') {
+        await window.updateLeaderboard(); // lê do Supabase sem cache
+      }
           player_name: p.player_name,
           class_group: p.class_group || '',
           total_score: p.total_score  || 0,
