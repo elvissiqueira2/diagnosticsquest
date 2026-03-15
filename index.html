@@ -1876,5 +1876,46 @@
 </script>
 <!-- ======================== FIM DO PATCH LIMPO ======================== -->
 ``
+  <script>
+/* HOTFIX #1 — força o botão "INICIAR MISSÃO" a chamar o startGame NOVO (com Supabase)
+   Explicação: o listener original já estava ligado antes; reatribuir window.startGame
+   não troca o handler antigo. Aqui, interceptamos em CAPTURE, executamos o novo
+   startGame() e bloqueamos a propagação para a função antiga. */
+(function hookStartMission(){
+  const btn = document.getElementById('start-game-btn');
+  if (!btn || btn.__hdqHooked) return;
+  btn.__hdqHooked = true;
+  btn.addEventListener('click', function(ev){
+    try {
+      ev.stopImmediatePropagation();   // impede o handler antigo de rodar
+      ev.preventDefault();             // evita efeitos colaterais
+      if (typeof window.startGame === 'function') {
+        window.startGame();            // <-- chama o startGame que integra com Supabase
+      } else {
+        console.warn('[HDQ] startGame não está disponível.');
+      }
+    } catch (e) {
+      console.error('[HDQ] falha no hook do start:', e);
+    }
+  }, true); // CAPTURE = executa antes do handler antigo
+})();
+</script>
+  <script>
+/* HOTFIX #2 — se não houver player_name, impede abrir ranking e avisa */
+(function guardLeaderboard(){
+  const btn = document.getElementById('leaderboard-btn');
+  if (!btn || btn.__hdqGuard) return;
+  btn.__hdqGuard = true;
+  btn.addEventListener('click', function(ev){
+    const p = window.currentPlayer;
+    const hasName = p && typeof p.player_name === 'string' && p.player_name.trim() !== '';
+    if (!hasName) {
+      ev.stopImmediatePropagation();
+      ev.preventDefault();
+      alert('Antes de abrir o ranking:\n1) Preencha "Seu nome" e "Turma"\n2) Clique em INICIAR MISSÃO\n3) Complete um desafio.\nAí sim o ranking vai te mostrar 🙂');
+    }
+  }, true);
+})();
+</script>
 </body>
 </html>
