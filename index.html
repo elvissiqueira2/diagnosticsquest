@@ -1697,7 +1697,7 @@ async function syncOnline(functionName, payload) {
         return null;
     }
 }
-
+<script>
 // Interceptando o salvamento do jogo para enviar ao banco
 const originalSaveProgress = window.saveProgress;
 window.saveProgress = async function() {
@@ -1750,5 +1750,6 @@ window.updateLeaderboard = async function() {
         </div>
     `).join('');
 };
+ </script>
  </body>
 </html>
