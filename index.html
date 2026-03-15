@@ -1674,15 +1674,15 @@
     // Initialize the app
     initializeApp();
   </script>
-<!-- ======== SUPABASE: INTEGRAÇÃO LIMPA (mantendo o jogo original) ======== -->
+  <!-- ======== SUPABASE: INTEGRAÇÃO LIMPA (mantendo o jogo original) ======== -->
 <script>
-  // Config: usa window.__ENV__ se existir; senão, cai nos seus valores
+  // Config: usa window.__ENV__ se existir; senão, usa seus valores
   const ENV = window.__ENV__ || {};
   const SUPABASE_URL  = (ENV.SUPABASE_URL  || 'https://pqtrsgtzrmrmjbijzqvg.supabase.co').replace(/\/$/,'');
   const SUPABASE_KEY  =  ENV.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxdHJzZ3R6cm1ybWpiaWp6cXZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MTg3NTYsImV4cCI6MjA4ODM5NDc1Nn0.RXeyQrzDxofqewTJZhBpaHOnozBNYei1Lb7Log3QRww';
   const EF_BASE       = `${SUPABASE_URL}/functions/v1`;
 
-  // Cliente simples p/ Edge Functions com headers corretos
+  // Cliente simples para Edge Functions com headers corretos
   async function api(path, { method='GET', body=null, signal } = {}) {
     const opts = {
       method,
@@ -1701,12 +1701,23 @@
     const ct = res.headers.get('content-type') || '';
     return ct.includes('application/json') ? res.json() : {};
   }
-  const getPlayer       = (name)   => api(`/get-player?name=${encodeURIComponent(name)}`); // GET
-  const savePlayer      = (data)   => api('/save-player',      { method:'POST', body:data });
-  const getLeaderboard  = ()       => api('/get-leaderboard');                               // GET
-  const clearRankingEF  = ()       => api('/clear-ranking',    { method:'POST' });
+  const getPlayer       = (name)   => api(`/get-player?name=${encodeURIComponent(name)}`); // GET  (retorna { player })
+  const savePlayer      = (data)   => api('/save-player',      { method:'POST', body:data }); // POST (upsert por player_name)
+  const getLeaderboard  = ()       => api('/get-leaderboard');                                  // GET (top 10)
+  const clearRankingEF  = ()       => api('/clear-ranking',    { method:'POST' });              // POST
 
-  // ====== GANCHOS LEVES NO JOGO (sem mudar UX/UI) ======
+  // ====== UTIL: ler/escrever o jogador global do jogo (ambos os lugares) ======
+  function setGlobalPlayer(p) {
+    // 1) variável global do seu script (let currentPlayer)
+    try { currentPlayer = p; } catch(_) {}
+    // 2) espelho no window (por segurança)
+    window.currentPlayer = p;
+  }
+  function getGlobalPlayer() {
+    return window.currentPlayer || (typeof currentPlayer !== 'undefined' ? currentPlayer : null);
+  }
+
+  // ====== GANCHOS LEVES NO JOGO (sem mudar UI) ======
   // Guardar originais para encadear
   const _showGameDashboard = (typeof window.showGameDashboard === 'function') ? window.showGameDashboard : ()=>{};
   const _finishChallenge   = (typeof window.finishChallenge   === 'function') ? window.finishChallenge   : null;
@@ -1714,7 +1725,7 @@
   // startGame: carrega/cria jogador no Supabase e segue o fluxo original
   window.startGame = async function () {
     const nameInput  = document.getElementById('player-name-input');
-    const classInput = document.getElementById('class-group-input'); // já existe no seu HTML
+    const classInput = document.getElementById('class-group-input');
     const player_name = (nameInput?.value || '').trim();
     const class_group = (classInput?.value || '').trim();
 
@@ -1727,22 +1738,31 @@
     try {
       const data = await getPlayer(player_name); // { player: {...} | null }
       if (data && data.player) {
-        window.currentPlayer = data.player;
+        setGlobalPlayer({
+          player_name     : data.player.player_name,
+          class_group     : data.player.class_group || '',
+          total_score     : data.player.total_score ?? 0,
+          current_level   : data.player.current_level ?? 1,
+          badges_earned   : data.player.badges_earned || '',
+          challenges_completed: data.player.challenges_completed ?? 0
+        });
       } else {
-        window.currentPlayer = {
+        // novo aluno
+        const p = {
           player_name, class_group,
           total_score: 0, current_level: 1,
           badges_earned: '', challenges_completed: 0
         };
-        await savePlayer(window.currentPlayer); // cria no banco
+        setGlobalPlayer(p);
+        await savePlayer(p); // cria no banco
       }
     } catch (e) {
       // offline: segue com local
-      window.currentPlayer = {
+      setGlobalPlayer({
         player_name, class_group,
         total_score: 0, current_level: 1,
         badges_earned: '', challenges_completed: 0
-      };
+      });
       console.warn('[HDQ] Falha ao consultar jogador; seguindo local:', e.message);
     }
 
@@ -1758,7 +1778,7 @@
 
       // 2) tenta persistir (sem travar a UI em caso de erro)
       try {
-        const p = window.currentPlayer || {};
+        const p = getGlobalPlayer() || {};
         await savePlayer({
           player_name: p.player_name,
           class_group: p.class_group || '',
@@ -1773,7 +1793,7 @@
     };
   }
 
-  // updateLeaderboard: só do Supabase (top 10), sem redefinições múltiplas
+  // updateLeaderboard: lê só do Supabase (top 10)
   window.updateLeaderboard = async function () {
     const list = document.getElementById('leaderboard-list');
     try {
@@ -1783,180 +1803,10 @@
         list.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>';
         return;
       }
-      const me = window.currentPlayer && window.currentPlayer.player_name;
+      const me = (getGlobalPlayer() && getGlobalPlayer().player_name) || '';
       list.innerHTML = players.map((player, idx) => {
         const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx+1}`;
         const isMe  = me && player.player_name === me;
-        const turma = player.class_group ? ` • Turma ${player.class_group}` : '';
-        return `
-          <div class="flex items-center gap-4 p-4 rounded-lg ${isMe ? 'bg-emerald-900/30 border border-emerald-500/50' : 'bg-slate-800/50'}">
-            <span class="text-2xl w-10 text-center">${medal}</span>
-            <div class="flex-1">
-              <p class="font-bold ${isMe ? 'text-emerald-400' : 'text-white'}">${player.player_name}</p>
-              <p class="text-sm text-slate-400">Nível ${player.current_level ?? 1} • ${player.challenges_completed ?? 0} desafios${turma}</p>
-            </div>
-            <div class="text-right">
-              <p class="font-orbitron text-xl text-cyan-400">${player.total_score ?? 0}</p>
-              <p class="text-xs text-slate-500">XP</p>
-            </div>
-          </div>
-        `;
-      }).join('');
-    } catch (e) {
-      console.error('[HDQ] Ranking online indisponível:', e.message);
-      list.innerHTML = '<p class="text-red-400 text-center py-8">Não foi possível carregar o ranking online.</p>';
-    }
-  };
-
-  // Clear ranking: 1 handler só (sem prompt), com headers certos
-  (function wireClearRankingOnce(){
-    const btn = document.getElementById('clear-ranking-btn');
-    if (!btn) return;
-    if (btn.__hdqWired) return;
-    btn.__hdqWired = true;
-
-    btn.addEventListener('click', async (ev) => {
-      ev.preventDefault(); ev.stopPropagation();
-      if (!confirm('Tem certeza que deseja limpar o ranking?')) return;
-      try {
-        await clearRankingEF();
-        if (typeof window.hideLeaderboard === 'function') window.hideLeaderboard();
-        if (typeof window.updateLeaderboard === 'function') window.updateLeaderboard();
-        if (typeof window.showResultModal === 'function') {
-          window.showResultModal('🗑️', 'Ranking Limpo', 'Dados removidos do banco com sucesso!', '');
-        }
-      } catch (e) {
-        if (typeof window.showResultModal === 'function') {
-          window.showResultModal('⚠️', 'Falha ao limpar', 'Tente novamente em alguns segundos.', '');
-        }
-        console.warn('[HDQ] clear-ranking falhou:', e.message);
-      }
-    }, { capture: true });
-  })();
-
-  // Salva rapidamente ao abrir o ranking (garante persistência antes de listar)
-  (function wireLeaderboardOpenForceSave(){
-    const btn = document.getElementById('leaderboard-btn');
-    if (!btn) return;
-    if (btn.__hdqForceSave) return;
-    btn.__hdqForceSave = true;
-
-    btn.addEventListener('click', async () => {
-      try {
-        const p = window.currentPlayer;
-        if (!p || !p.player_name) return;
-        await savePlayer({
-          player_name: p.player_name,
-          class_group: p.class_group || '',
-          total_score: p.total_score  || 0,
-          current_level: p.current_level || 1,
-          badges_earned: p.badges_earned || '',
-          challenges_completed: p.challenges_completed || 0
-        });
-      } catch {}
-    }, { capture: true });
-  })();
-
-  // Salvamento extra ao sair da página (não atrapalha o fluxo)
-  window.addEventListener('beforeunload', () => {
-    try {
-      const p = window.currentPlayer;
-      if (!p || !p.player_name) return;
-      const body = JSON.stringify({
-        player_name: p.player_name,
-        class_group: p.class_group || '',
-        total_score: p.total_score  || 0,
-        current_level: p.current_level || 1,
-        badges_earned: p.badges_earned || '',
-        challenges_completed: p.challenges_completed || 0
-      });
-      navigator.sendBeacon?.(`${EF_BASE}/save-player`, new Blob([body], { type:'application/json' }));
-    } catch {}
-  });
-</script>
-<!-- ======================== FIM DO PATCH LIMPO ======================== -->
-``
-  <script>
-/* HOTFIX #1 — força o botão "INICIAR MISSÃO" a chamar o startGame NOVO (com Supabase)
-   Explicação: o listener original já estava ligado antes; reatribuir window.startGame
-   não troca o handler antigo. Aqui, interceptamos em CAPTURE, executamos o novo
-   startGame() e bloqueamos a propagação para a função antiga. */
-(function hookStartMission(){
-  const btn = document.getElementById('start-game-btn');
-  if (!btn || btn.__hdqHooked) return;
-  btn.__hdqHooked = true;
-  btn.addEventListener('click', function(ev){
-    try {
-      ev.stopImmediatePropagation();   // impede o handler antigo de rodar
-      ev.preventDefault();             // evita efeitos colaterais
-      if (typeof window.startGame === 'function') {
-        window.startGame();            // <-- chama o startGame que integra com Supabase
-      } else {
-        console.warn('[HDQ] startGame não está disponível.');
-      }
-    } catch (e) {
-      console.error('[HDQ] falha no hook do start:', e);
-    }
-  }, true); // CAPTURE = executa antes do handler antigo
-})();
-</script>
-  <script>
-/* HOTFIX #2 — se não houver player_name, impede abrir ranking e avisa */
-(function guardLeaderboard(){
-  const btn = document.getElementById('leaderboard-btn');
-  if (!btn || btn.__hdqGuard) return;
-  btn.__hdqGuard = true;
-  btn.addEventListener('click', function(ev){
-    const p = window.currentPlayer;
-    const hasName = p && typeof p.player_name === 'string' && p.player_name.trim() !== '';
-    if (!hasName) {
-      ev.stopImmediatePropagation();
-      ev.preventDefault();
-      alert('Antes de abrir o ranking:\n1) Preencha "Seu nome" e "Turma"\n2) Clique em INICIAR MISSÃO\n3) Complete um desafio.\nAí sim o ranking vai te mostrar 🙂');
-    }
-  }, true);
-})();
-</script>
-  <script>
-/* Protege contra currentPlayer === null quando o dashboard abre.
-   Não muda UI; apenas cria um objeto default se ainda não existir. */
-(function guardCurrentPlayerOnDashboard(){
-  if (typeof window.showGameDashboard !== 'function') return;
-  const _show = window.showGameDashboard;
-  window.showGameDashboard = function(){
-    if (!window.currentPlayer) {
-      const name  = (document.getElementById('player-name-input')?.value || '').trim();
-      const turma = (document.getElementById('class-group-input')?.value || '').trim();
-      window.currentPlayer = {
-        player_name: name || 'Aluno',
-        class_group: turma || '',
-        total_score: 0,
-        current_level: 1,
-        badges_earned: '',
-        challenges_completed: 0
-      };
-    }
-    return _show.apply(this, arguments);
-  };
-})();
-</script>
-  <script>
-/* Garante que o clique em INICIAR MISSÃO dispare o startGame atual (com Supabase).
-   Em CAPTURE: roda antes do handler antigo e bloqueia a propagação. */
-(function hookStartMission(){
-  const btn = document.getElementById('start-game-btn');
-  if (!btn || btn.__hdqHooked) return;
-  btn.__hdqHooked = true;
-  btn.addEventListener('click', function(ev){
-    ev.stopImmediatePropagation();
-    ev.preventDefault();
-    if (typeof window.startGame === 'function') {
-      window.startGame();
-    } else {
-      console.warn('[HDQ] startGame não está disponível.');
-    }
-  }, true); // CAPTURE
-})();
-</script>
+       
 </body>
 </html>
