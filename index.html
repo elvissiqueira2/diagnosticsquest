@@ -2,6 +2,8 @@
 <!doctype html>
 <html lang="pt-BR" class="h-full">
  <head>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
   <meta name="mobile-web-app-capable" content="yes">
@@ -1675,167 +1677,13 @@
     initializeApp();
   </script>
   
-  <!-- ======== SUPABASE: INTEGRAÇÃO LIMPA (mantendo o jogo original) ======== -->
-<script>
-  // Config: usa window.__ENV__ se existir; senão, usa seus valores
-  const ENV = window.__ENV__ || {};
-  const SUPABASE_URL  = (ENV.SUPABASE_URL  || 'https://pqtrsgtzrmrmjbijzqvg.supabase.co').replace(/\/$/,'');
-  const SUPABASE_KEY  =  ENV.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxdHJzZ3R6cm1ybWpiaWp6cXZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MTg3NTYsImV4cCI6MjA4ODM5NDc1Nn0.RXeyQrzDxofqewTJZhBpaHOnozBNYei1Lb7Log3QRww';
-  const EF_BASE       = `${SUPABASE_URL}/functions/v1`;
-
-  // Cliente simples para Edge Functions com headers corretos
-// (SUBSTITUI a função api existente)
-// SUBSTITUA a função api existente por esta (não cole <script> aqui!)
-async function api(path, { method='GET', body=null, signal } = {}) {
-  // 1) Cache-busting: para toda leitura GET, acrescenta ?_=<timestamp>
-  const url = method === 'GET'
-    ? `${EF_BASE}${path}${path.includes('?') ? '&' : '?'}_=${Date.now()}`
-    : `${EF_BASE}${path}`;
-
-  const opts = {
-    method,
-    cache: 'no-store', // 2) diz ao navegador para não armazenar cache
-    headers: {
-      'apikey'      : SUPABASE_KEY,
-      'Authorization': `Bearer ${SUPABASE_KEY}`
-    },
-    signal
-  };
-  if (method !== 'GET') {
-    opts.headers['Content-Type'] = 'application/json';
-    opts.body = JSON.stringify(body || {});
-  }
-
-  const res = await fetch(url, opts);
-  if (!res.ok) throw new Error(`[${path}] ${res.status} ${await res.text().catch(()=>res.statusText)}`);
-  const ct = res.headers.get('content-type') || '';
-  return ct.includes('application/json') ? res.json() : {};
-}
-  const getPlayer       = (name)   => api(`/get-player?name=${encodeURIComponent(name)}`); // GET  (retorna { player })
-  const savePlayer      = (data)   => api('/save-player',      { method:'POST', body:data }); // POST (upsert por player_name)
-  const getLeaderboard  = ()       => api('/get-leaderboard');                                  // GET (top 10)
-  const clearRankingEF  = ()       => api('/clear-ranking',    { method:'POST' });              // POST
-
-  // ====== UTIL: ler/escrever o jogador global do jogo (ambos os lugares) ======
-  function setGlobalPlayer(p) {
-    // 1) variável global do seu script (let currentPlayer)
-    try { currentPlayer = p; } catch(_) {}
-    // 2) espelho no window (por segurança)
-    window.currentPlayer = p;
-  }
-  function getGlobalPlayer() {
-    return window.currentPlayer || (typeof currentPlayer !== 'undefined' ? currentPlayer : null);
-  }
-
-  // ====== GANCHOS LEVES NO JOGO (sem mudar UI) ======
-  // Guardar originais para encadear
-  const _showGameDashboard = (typeof window.showGameDashboard === 'function') ? window.showGameDashboard : ()=>{};
-  const _finishChallenge   = (typeof window.finishChallenge   === 'function') ? window.finishChallenge   : null;
-
-  // startGame: carrega/cria jogador no Supabase e segue o fluxo original
-  window.startGame = async function () {
-    const nameInput  = document.getElementById('player-name-input');
-    const classInput = document.getElementById('class-group-input');
-    const player_name = (nameInput?.value || '').trim();
-    const class_group = (classInput?.value || '').trim();
-
-    if (!player_name) {
-      nameInput?.classList?.add('animate-shake','border-red-500');
-      setTimeout(()=> nameInput?.classList?.remove('animate-shake','border-red-500'), 500);
-      return;
-    }
-
-    try {
-      const data = await getPlayer(player_name); // { player: {...} | null }
-      if (data && data.player) {
-        setGlobalPlayer({
-          player_name     : data.player.player_name,
-          class_group     : data.player.class_group || '',
-          total_score     : data.player.total_score ?? 0,
-          current_level   : data.player.current_level ?? 1,
-          badges_earned   : data.player.badges_earned || '',
-          challenges_completed: data.player.challenges_completed ?? 0
-        });
-      } else {
-        // novo aluno
-        const p = {
-          player_name, class_group,
-          total_score: 0, current_level: 1,
-          badges_earned: '', challenges_completed: 0
-        };
-        setGlobalPlayer(p);
-        await savePlayer(p); // cria no banco
-      }
-    } catch (e) {
-      // offline: segue com local
-      setGlobalPlayer({
-        player_name, class_group,
-        total_score: 0, current_level: 1,
-        badges_earned: '', challenges_completed: 0
-      });
-      console.warn('[HDQ] Falha ao consultar jogador; seguindo local:', e.message);
-    }
-
-    // entra no dashboard do jogo (original)
-    _showGameDashboard();
-  };
-
-  // finishChallenge: mantém a lógica original + persiste no Supabase
-  if (_finishChallenge) {
-    window.finishChallenge = async function () {
-      // 1) deixa o jogo calcular score/nível/badges como sempre
-      await _finishChallenge();
-
-      // 2) tenta persistir (sem travar a UI em caso de erro)
-      try {
-        const p = getGlobalPlayer() || {};
-        await savePlayer({// Se o modal de ranking estiver aberto, atualiza na hora
-      const lbOpen = !document.getElementById('leaderboard-modal')?.classList.contains('hidden');
-      if (lbOpen && typeof window.updateLeaderboard === 'function') {
-        await window.updateLeaderboard(); // lê do Supabase sem cache
-      }
-          player_name: p.player_name,
-          class_group: p.class_group || '',
-          total_score: p.total_score  || 0,
-          current_level: p.current_level || 1,
-          badges_earned: p.badges_earned || '',
-          challenges_completed: p.challenges_completed || 0
-        });
-// ADICIONE ESTAS LINHAS ▼▼▼
-      const lbOpen = !document.getElementById('leaderboard-modal')?.classList.contains('hidden');
-      if (lbOpen && typeof window.updateLeaderboard === 'function') {
-        await window.updateLeaderboard(); // lê do Supabase e já reflete a pontuação
-      }
-      // ▲▲▲
-
-      } catch (e) {
-        console.warn('[HDQ] Falha ao salvar após desafio:', e.message);
-      }
-    };
-  }
-
-  // updateLeaderboard: lê só do Supabase (top 10)
-  window.updateLeaderboard = async function () {
-    const list = document.getElementById('leaderboard-list');
-    try {
-      const data = await getLeaderboard();        // { players: [...] }
-      const players = Array.isArray(data?.players) ? data.players : [];
-      if (!players.length) {
-        list.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>';
-        return;
-      }
-      const me = (getGlobalPlayer() && getGlobalPlayer().player_name) || '';
-      list.innerHTML = players.map((player, idx) => {
-        const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx+1}`;
-        const isMe  = me && player.player_name === me;
-       <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-// 1. Configuração da Conexão
+ <script>
+// --- CONFIGURAÇÃO SUPABASE ---
 const SUB_URL = "https://pqtrsgtzrmrmjbijzqvg.supabase.co";
 const SUB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxdHJzZ3R6cm1ybWpiaWp6cXZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MTg3NTYsImV4cCI6MjA4ODM5NDc1Nn0.RXeyQrzDxofqewTJZhBpaHOnozBNYei1Lb7Log3QRww";
 
-// Função auxiliar para chamar suas Edge Functions
-async function callEdgeFunction(name, payload) {
+// Função para falar com suas Edge Functions
+async function callEdge(name, payload) {
     try {
         const response = await fetch(`${SUB_URL}/functions/v1/${name}`, {
             method: 'POST',
@@ -1847,64 +1695,63 @@ async function callEdgeFunction(name, payload) {
         });
         return await response.json();
     } catch (e) {
-        console.error(`Erro na função ${name}:`, e);
+        console.error("Erro na nuvem:", e);
+        return null;
     }
 }
 
-// 2. Sincronização Automática
-// Vamos "envelopar" a função original de salvar do jogo
-const originalSaveProgress = window.saveProgress;
-window.saveProgress = async function() {
-    // Primeiro executa o salvamento normal do jogo (local)
-    if (originalSaveProgress) originalSaveProgress();
-
-    // Agora envia para o seu Supabase Online
-    const player = JSON.parse(localStorage.getItem('hdq_player') || '{}');
-    if (player.name) {
-        await callEdgeFunction('update-leaderboard', {
-            player_name: player.name,
-            class_group: player.class_group || 'Sem Turma',
-            total_score: player.score || 0,
-            current_level: player.level || 1,
-            challenges_completed: player.challenges_completed || 0,
-            badges_earned: Array.from(player.badges || []).join(',')
-        });
-    }
-};
-
-// 3. Ranking em Tempo Real
-// Substituímos a função de mostrar o ranking para ler do banco online
-window.updateLeaderboard = async function() {
-    const list = document.getElementById('leaderboard-list');
-    if (!list) return;
-
-    list.innerHTML = '<p class="text-center py-4 animate-pulse">Buscando dados da nuvem...</p>';
-
-    const data = await callEdgeFunction('get-leaderboard', {});
+// Injetando a lógica no funcionamento original do jogo
+document.addEventListener('DOMContentLoaded', () => {
     
-    // Supondo que sua função retorna { data: [...] } ou direto o array
-    const players = data.players || data || [];
+    // 1. Hook para Salvar Online sempre que o jogo salvar localmente
+    const originalSave = window.saveProgress;
+    window.saveProgress = async function() {
+        if (originalSave) originalSave(); // Mantém o save local (offline)
+        
+        const p = JSON.parse(localStorage.getItem('hdq_player') || '{}');
+        if (p.name) {
+            await callEdge('update-leaderboard', {
+                player_name: p.name,
+                class_group: p.class_group || 'Visitante',
+                total_score: p.score || 0,
+                current_level: p.level || 1,
+                challenges_completed: p.challenges_completed || 0,
+                badges_earned: Array.from(p.badges || []).join(',')
+            });
+        }
+    };
 
-    if (players.length === 0) {
-        list.innerHTML = '<p class="text-center py-4">Nenhum registro online ainda.</p>';
-        return;
-    }
+    // 2. Hook para o Ranking (Substituindo a função de exibir)
+    window.updateLeaderboard = async function() {
+        const list = document.getElementById('leaderboard-list');
+        if (!list) return;
 
-    list.innerHTML = players.map((p, index) => `
-        <div class="flex items-center justify-between p-3 glass-effect rounded-lg border-l-4 ${index < 3 ? 'border-emerald-400' : 'border-slate-500'} mb-2">
-            <div class="flex items-center gap-3">
-                <span class="font-orbitron font-bold text-lg w-6">${index + 1}</span>
-                <div>
-                    <p class="font-bold">${p.player_name} <span class="text-[10px] text-emerald-400 font-normal">[${p.class_group}]</span></p>
-                    <p class="text-[10px] text-slate-400">Nível ${p.current_level} • ${p.challenges_completed} Desafios</p>
+        list.innerHTML = '<div class="text-center py-10"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div><p class="mt-2 text-xs">Conectando ao servidor...</p></div>';
+
+        const result = await callEdge('get-leaderboard', {});
+        const players = Array.isArray(result?.players) ? result.players : [];
+
+        if (players.length === 0) {
+            list.innerHTML = '<p class="text-center py-10 text-slate-500 text-sm">Nenhum registro online ainda.</p>';
+            return;
+        }
+
+        list.innerHTML = players.map((p, index) => `
+            <div class="flex items-center justify-between p-3 glass-effect rounded-lg border-l-4 ${index < 3 ? 'border-emerald-400' : 'border-slate-500'} mb-2">
+                <div class="flex items-center gap-3">
+                    <span class="font-orbitron font-bold text-lg w-6">${index + 1}</span>
+                    <div>
+                        <p class="font-bold text-sm text-slate-100">${p.player_name} <span class="text-[10px] text-emerald-400">(${p.class_group})</span></p>
+                        <p class="text-[10px] text-slate-400 uppercase tracking-tighter">Nível ${p.current_level} • ${p.challenges_completed} Desafios</p>
+                    </div>
+                </div>
+                <div class="text-right font-orbitron">
+                    <p class="text-emerald-400 font-bold">${p.total_score} <span class="text-[8px]">XP</span></p>
                 </div>
             </div>
-            <div class="text-right">
-                <p class="font-orbitron text-emerald-400 font-bold">${p.total_score} XP</p>
-            </div>
-        </div>
-    `).join('');
-};
+        `).join('');
+    };
+});
 </script>
-</body>
+ </body>
 </html>
