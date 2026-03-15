@@ -1,701 +1,127 @@
 <!doctype html>
-<html lang="pt-BR" class="h-full">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>Hardware Diagnostics Quest</title>
-
-  <!-- Tailwind (como no arquivo original) -->
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    * { box-sizing: border-box; }
-    .font-orbitron { font-family: 'Orbitron', monospace; }
-    .font-rajdhani { font-family: 'Rajdhani', sans-serif; }
-
-    @keyframes pulse-glow { 0%,100%{ box-shadow:0 0 20px rgba(0,255,136,.3)} 50%{ box-shadow:0 0 40px rgba(0,255,136,.6)} }
-    @keyframes slide-in { from{ transform:translateX(-100%); opacity:0 } to{ transform:translateX(0); opacity:1 } }
-    @keyframes bounce-in { 0%{transform:scale(0)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
-    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
-    @keyframes typing { from{width:0} to{width:100%} }
-    @keyframes blink { 50%{ border-color:transparent } }
-    @keyframes float { 0%,100%{ transform:translateY(0)} 50%{ transform:translateY(-10px)} }
-    @media (max-width:640px){ button{min-height:44px; min-width:44px} input{min-height:44px; font-size:16px} .font-orbitron{ font-size:clamp(1rem,2.5vw,2rem)}}
-    @keyframes scan-line { 0%{top:0} 100%{top:100%} }
-
-    .animate-pulse-glow{ animation:pulse-glow 2s infinite }
-    .animate-slide-in{ animation:slide-in .5s ease-out }
-    .animate-bounce-in{ animation:bounce-in .4s ease-out }
-    .animate-shake{ animation:shake .5s ease-in-out }
-    .animate-float{ animation:float 3s ease-in-out infinite }
-
-    .glass-effect{ background:rgba(15,23,42,.8); backdrop-filter:blur(10px); border:1px solid rgba(0,255,136,.2) }
-    .terminal-text{ font-family:'Courier New', monospace; text-shadow:0 0 10px currentColor }
-    .scan-line::after{ content:''; position:absolute; left:0; width:100%; height:2px; background:linear-gradient(90deg,transparent,rgba(0,255,136,.5),transparent); animation:scan-line 3s linear infinite }
-
-    .progress-bar{ background:linear-gradient(90deg,#00ff88,#00ccff); box-shadow:0 0 20px rgba(0,255,136,.5) }
-    .card-hover{ transition:all .3s ease }
-    @media (hover:hover){ .card-hover:hover{ transform:translateY(-5px); box-shadow:0 10px 40px rgba(0,255,136,.3)} }
-    @media (max-width:640px){ .card-hover:active{ transform:translateY(-3px); box-shadow:0 5px 20px rgba(0,255,136,.3)} }
-
-    .btn-cyber{ position:relative; overflow:hidden; transition:all .3s ease }
-    .btn-cyber::before{ content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent); transition:left .5s ease }
-    .btn-cyber:hover::before{ left:100% }
-    .badge-earned{ animation:bounce-in .5s ease-out }
-
-    .circuit-pattern{
-      background-image:
-        linear-gradient(rgba(0,255,136,.03) 1px,transparent 1px),
-        linear-gradient(90deg, rgba(0,255,136,.03) 1px,transparent 1px);
-      background-size:50px 50px;
-    }
-  </style>
-
-  <style> body { box-sizing: border-box; } </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<title>Hardware Diagnostics Quest</title>
+<meta name="color-scheme" content="dark light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256' viewBox='0 0 256 256'%3E%3Ccircle cx='128' cy='128' r='120' fill='%23011a2b'/%3E%3Cpath d='M64 128h128M128 64v128' stroke='%2300e38a' stroke-width='16' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root{--bg:#0b1020;--panel:#121a2f;--line:#1f2a44;--txt:#e6edf7;--muted:#9fb2d8;--a:#00e38a;--b:#00c4ff;--ok:#16a34a;--err:#ef4444;}
+  *{box-sizing:border-box} html,body{height:100%} body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.4 system-ui,Segoe UI,Roboto,Arial}
+  .wrap{max-width:900px;margin:0 auto;padding:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:16px 0}
+  .title{font-weight:900;letter-spacing:.5px}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  input,button{border-radius:10px;border:1px solid var(--line);padding:10px 12px;background:#0d1630;color:var(--txt)}
+  input{min-width:220px}
+  button{cursor:pointer}
+  .btn{background:#142043;border-color:#29406b}
+  .btn.primary{background:linear-gradient(90deg,var(--a),var(--b));border:none;color:#031525;font-weight:800}
+  .btn.ok{background:var(--ok);border:none}
+  .btn.err{background:var(--err);border:none}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .muted{color:var(--muted)}
+  .stat{background:#0f1830;border:1px solid var(--line);border-radius:10px;padding:10px}
+  .big{font-weight:900;font-size:24px}
+  .bar{height:10px;border-radius:999px;background:#0b1430;border:1px solid #233055;overflow:hidden}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,#22c55e,#3b82f6,#a855f7)}
+  .opt{background:#16203b;border:1px solid #2b3a60;border-radius:10px;padding:12px;cursor:pointer}
+  .opt:hover{filter:brightness(1.12)}
+  dialog{border:none;border-radius:14px;background:#0e162b;color:var(--txt);max-width:640px;width:92%}
+  dialog::backdrop{background:rgba(0,0,0,.65)}
+  .center{display:flex;justify-content:center;align-items:center}
+  .spin{width:48px;height:48px;border:4px solid var(--a);border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(1turn)}}
+  .tag{display:inline-block;background:#122042;border:1px solid #2b3a60;border-radius:999px;padding:4px 10px;font-size:12px;margin-right:6px}
+  .h1{font-size:28px;margin:0 0 6px}
+  .h2{font-size:20px;margin:0 0 6px}
+  .h3{font-size:16px;margin:0 0 6px}
+  .mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mt8{margin-top:8px}
+  .hidden{display:none}
+</style>
 </head>
+<body>
+<div class="wrap">
 
-<body class="h-full bg-slate-900 text-white font-rajdhani overflow-auto">
-  <div id="app" class="min-h-full w-full circuit-pattern">
-
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="min-h-full flex items-center justify-center">
-      <div class="text-center">
-        <div class="w-20 h-20 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p class="text-emerald-400 font-orbitron text-xl">INICIALIZANDO SISTEMA...</p>
-      </div>
+  <!-- CABEÇALHO -->
+  <div class="row" style="justify-content:space-between">
+    <div>
+      <div class="h1 title">HARDWARE DIAGNOSTICS <span style="color:var(--a)">QUEST</span></div>
+      <div class="muted">AULA 16 — Teste e Diagnóstico de Hardware</div>
     </div>
-
-    <!-- Main Menu -->
-    <div id="main-menu" class="hidden min-h-full flex flex-col items-center justify-center p-6">
-      <div class="text-center mb-8 animate-slide-in">
-        <h1 id="game-title" class="font-orbitron text-3xl sm:text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 mb-2">HARDWARE DIAGNOSTICS</h1>
-        <p class="text-lg sm:text-2xl text-emerald-300">QUEST</p>
-        <p id="welcome-text" class="text-slate-400 mt-3 text-sm sm:text-base">Bem-vindo ao desafio!</p>
-      </div>
-
-      <div class="glass-effect rounded-2xl p-6 sm:p-8 w-full max-w-md animate-pulse-glow">
-        <div class="mb-6">
-          <label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">IDENTIFICAÇÃO DO TÉCNICO</label>
-          <input type="text" id="player-name-input" placeholder="Seu nome..." class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">
-        </div>
-        <!-- Campo TURMA -->
-        <div class="mb-2">
-          <label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">TURMA</label>
-          <input type="text" id="class-group-input" placeholder="Ex.: TI-101" class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">
-        </div>
-
-        <button id="start-game-btn" class="btn-cyber w-full bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-bold py-3 rounded-lg text-base sm:text-lg font-orbitron transition-all"> 🚀 INICIAR MISSÃO </button>
-        <button id="leaderboard-btn" class="btn-cyber w-full mt-4 bg-slate-700 text-emerald-400 font-bold py-2 rounded-lg text-sm sm:text-base transition-all"> 🏆 RANKING </button>
-      </div>
-
-      <div class="mt-8 text-center text-slate-500">
-        <p>AULA 16 — Teste e Diagnóstico de Hardware</p>
-        <p class="text-sm mt-2">Aprenda sobre POST, códigos de erro e diagnóstico de falhas</p>
-      </div>
-    </div>
-
-    <!-- Game Dashboard -->
-    <div id="game-dashboard" class="hidden min-h-full p-4 md:p-"glass-effect rounded-xl p-4 mb-6">
-        <div class="flex flex-wrap items-center justify-between gap-4">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center font-orbitron font-bold text-xl">
-              <span id="player-avatar">T</span>
-            </div>
-            <div>
-              <p class="text-emerald-400 text-sm">TÉCNICO</p>
-              <p id="player-display-name" class="font-bold text-lg">Nome</p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-6">
-            <div class="text-center">
-              <p class="text-emerald-400 text-sm">PONTUAÇÃO</p>
-              <p id="score-display" class="font-orbitron text-2xl font-bold text-cyan-400">0</p>
-            </div>
-            <div class="text-center">
-              <p class="text-emerald-400 text-sm">NÍVEL</p>
-              <p id="level-display" class="font-orbitron text-2xl font-bold text-yellow-400">1</p>
-            </div>
-            <div class="text-center">
-              <p class="text-emerald-400 text-sm">DESAFIOS</p>
-              <p id="challenges-display" class="font-orbitron text-2xl font-bold text-purple-400">0</p>
-            </div>
-          </div>
-
-          <button id="menu-btn" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg transition-all"> ☰ Menu </button>
-        </div>
-
-        <!-- Progress Bar -->
-        <div class="mt-4">
-          <div class="flex justify-between text-sm mb-1">
-            <span class="text-slate-400">Progresso do Nível</span>
-            <span id="xp-display" class="text-emerald-400">0/1000 XP</span>
-          </div>
-          <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
-            <div id="xp-bar" class="progress-bar h-full rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
-        </div>
-      </header>
-
-      <!-- Badges -->
-      <div id="badges-section" class="glass-effect rounded-xl p-4 mb-6">
-        <h3 class="text-emerald-400 font-semibold mb-3">🏅 BADGES CONQUISTADAS</h3>
-        <div id="badges-container" class="flex flex-wrap gap-3">
-          <span class="text-slate-500 text-sm">Complete desafios para ganhar badges!</span>
-        </div>
-      </div>
-
-      <!-- Challenge Selection -->
-      <div id="challenge-selection" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <!-- Cards de desafio injetados via JS -->
-      </div>
-
-      <!-- Active Challenge Area -->
-      <div id="challenge-area" class="hidden">
-        <!-- Conteúdo do desafio -->
-      </div>
-    </div>
-
-    <!-- Leaderboard Modal -->
-    <div id="leaderboard-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-      <div class="glass-effect rounded-2xl p-6 w-full max-w-lg max-h-[80%] overflow-auto">
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="font-orbitron text-2xl text-emerald-400">🏆 RANKING</h2>
-          <div class="flex gap-2">
-            <button id="clear-ranking-btn" class="text-red-400 hover:text-red-300 text-sm px-3 py-1 rounded border border-red-500/50 hover:border-red-400 transition-all">🗑️ Limpar</button>
-            <button id="close-leaderboard" class="text-slate-400 hover:text-white text-2xl">×</button>
-          </div>
-        </div>
-        <div id="leaderboard-list" class="space-y-3"></div>
-      </div>
-    </div>
-
-    <!-- Result Modal -->
-    <div id="result-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-      <div class="glass-effect rounded-2xl p-8 w-full max-w-md text-center animate-bounce-in">
-        <div id="result-icon" class="text-6xl mb-4">✅</div>
-        <h2 id="result-title" class="font-orbitron text-2xl mb-2">CORRETO!</h2>
-        <p id="result-message" class="text-slate-300 mb-4">Explicação aqui</p>
-        <div id="result-points" class="text-emerald-400 font-bold text-xl mb-6">+100 XP</div>
-        <button id="result-continue" class="btn-cyber bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 px-8 py-3 rounded-lg font-bold text-lg"> CONTINUAR </button>
-      </div>
-    </div>
-
-    <!-- Badge Earned Modal -->
-    <div id="badge-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-      <div class="glass-effect rounded-2xl p-8 w-full max-w-md text-center animate-bounce-in">
-        <div class="text-8xl mb-4 animate-float" id="badge-earned-icon">🏅</div>
-        <h2 class="font-orbitron text-2xl text-yellow-400 mb-2">BADGE CONQUISTADA!</h2>
-        <p id="badge-earned-name" class="text-white text-xl mb-4">Nome da Badge</p>
-        <p id="badge-earned-desc" class="text-slate-400 mb-6">Descrição</p>
-        <button id="badge-continue" class="btn-cyber bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 px-8 py-3 rounded-lg font-bold text-lg"> INCRÍVEL! </button>
-      </div>
+    <div class="row">
+      <button id="btnRanking" class="btn">🏆 RANKING</button>
+      <button id="btnMenu" class="btn">☰ Menu</button>
     </div>
   </div>
 
-  <!-- =======================================================================
-       JOGO ORIGINAL (SEU SCRIPT)  — mantido como está, apenas colado limpo
-       ======================================================================= -->
-  <script>
-    // Game Configuration
-    const defaultConfig = { game_title: "HARDWARE DIAGNOSTICS", welcome_message: "Bem-vindo ao desafio de diagnóstico de hardware!" };
-    let config = { ...defaultConfig };
-    let currentPlayer = null;
-    let allPlayers = [];
-    let currentChallenge = null;
-    let currentQuestionIndex = 0;
-    let challengeScore = 0;
-    let questionsAnswered = new Set();
-    let isInitializing = true;
+  <!-- TELA INICIAL -->
+  <section id="viewIntro" class="card">
+    <div class="h2">Identificação do técnico</div>
+    <div class="row mb12">
+      <div>
+        <label class="muted">Nome</label><br>
+        <input id="inpName" placeholder="Seu nome...">
+      </div>
+      <div>
+        <label class="muted">Turma</label><br>
+        <input id="inpClass" placeholder="Ex.: TI-101">
+      </div>
+    </div>
+    <div class="row">
+      <button id="btnStart" class="btn primary">🚀 INICIAR MISSÃO</button>
+      <span class="muted">Seus dados serão salvos online para aparecer no ranking.</span>
+    </div>
+  </section>
 
-    // ==========================
-    // SEU CONTEÚDO DE DESAFIOS
-    // ==========================
-    // (AQUI mantive exatamente a mesma lista de desafios e perguntas
-    //  que estava no arquivo que você me enviou. Para reduzir a
-    //  mensagem e não ficar gigantesco, mantive o conteúdo integral,
-    //  sem alterações na lógica dos desafios.)
-
-    const challenges = [
-      /* --- Conteúdo idêntico ao que você enviou (categorias, perguntas etc.) --- */
-      /* -------------- (início do bloco) -------------- */
-      { id: 'post-basics', title: 'POST - Fundamentos', description: 'Aprenda sobre o Power-On Self-Test', icon: '🔌', color: 'from-blue-600 to-blue-800', difficulty: 1, xpReward: 150,
-        badge: { icon: '🔌', name: 'Mestre do POST', desc: 'Completou os fundamentos do POST' },
-        questions: [
-          { type:'multiple', question:'O que significa a sigla POST?', options:['Power-On Self-Test','Program Operating System Test','Power Output Signal Test','Processor On Startup Test'], correct:0, explanation:'POST significa Power-On Self-Test (Auto-Teste de Inicialização). É uma rotina de diagnóstico executada pelo BIOS quando o computador é ligado.' },
-          { type:'multiple', question:'Qual é a principal função do POST?', options:['Iniciar o sistema operacional','Verificar o funcionamento básico do hardware','Conectar à internet','Carregar drivers'], correct:1, explanation:'O POST verifica se os componentes essenciais do hardware (CPU, RAM, teclado, vídeo) estão funcionando corretamente antes de carregar o sistema operacional.' },
-          { type:'multiple', question:'O POST é executado por qual componente?', options:['Sistema Operacional','Placa de Vídeo','BIOS/UEFI','Processador sozinho'], correct:2, explanation:'O POST é uma rotina armazenada e executada pelo BIOS (Basic Input/Output System) ou UEFI (Unified Extensible Firmware Interface).' },
-          { type:'truefalse', question:'O POST é executado toda vez que o computador é ligado.', correct:true, explanation:'Correto! O POST é executado automaticamente em cada inicialização para garantir que o hardware está funcionando antes de carregar o SO.' },
-          { type:'multiple', question:'Qual componente é testado PRIMEIRO durante o POST?', options:['Disco rígido','Teclado','CPU e registradores','Monitor'], correct:2, explanation:'A CPU e seus registradores são testados primeiro, pois sem um processador funcional, nenhum outro teste pode ser executado.' },
-          { type:'order', question:'Ordene a sequência CORRETA do POST (arraste para ordenar):', items:['Teste da CPU','Teste da memória RAM','Inicialização do vídeo','Teste dos periféricos'], correctOrder:[0,1,2,3], explanation:'A sequência correta é: CPU → RAM → Vídeo → Periféricos. Esta ordem garante que cada componente testado dependa dos anteriores.' },
-          { type:'multiple', question:'O que acontece se o POST detectar uma falha crítica?', options:['O Windows inicia normalmente','O computador emite bipes de erro','O POST é ignorado','O disco é formatado'], correct:1, explanation:'Quando o POST detecta uma falha crítica, o sistema emite códigos sonoros (bipes) ou exibe códigos de erro através de LEDs para indicar o problema.' },
-          { type:'truefalse', question:'Um POST bem-sucedido geralmente emite um único bipe curto.', correct:true, explanation:'Correto! Na maioria dos BIOS, um único bipe curto indica que o POST foi concluído com sucesso e o sistema pode continuar a inicialização.' }
-        ]
-      },
-      { id:'beep-codes', title:'Códigos Sonoros', description:'Interprete os bipes de erro do BIOS', icon:'🔊', color:'from-purple-600 to-purple-800', difficulty:2, xpReward:200,
-        badge:{ icon:'🔊', name:'Intérprete de Bipes', desc:'Dominou os códigos sonoros do BIOS' },
-        questions:[
-          { type:'multiple', question:'Por que o BIOS usa códigos sonoros para indicar erros?', options:['Porque é mais moderno','Porque a placa de vídeo pode estar com defeito','Porque economiza energia','Porque é mais bonito'], correct:1, explanation:'Os códigos sonoros são usados porque, em caso de falha de vídeo, não seria possível exibir mensagens na tela. Os bipes permitem diagnóstico mesmo sem vídeo.' },
-          { type:'multiple', question:'No BIOS AMI, o que significa 1 bipe longo + 3 bipes curtos?', options:['Erro de teclado','Erro de memória RAM','Erro de placa de vídeo','POST bem-sucedido'], correct:2, explanation:'No BIOS AMI, 1 bipe longo seguido de 3 curtos indica erro na placa de vídeo. Este é um dos códigos mais comuns para problemas gráficos.' },
-          { type:'multiple', question:'O que geralmente indica bipes contínuos sem parar?', options:['Tudo funcionando','Erro de memória RAM','Erro de teclado','Disco cheio'], correct:1, explanation:'Bipes contínuos geralmente indicam problema grave com a memória RAM, como módulos mal encaixados, incompatíveis ou defeituosos.' },
-          { type:'truefalse', question:'Todos os fabricantes de BIOS usam os mesmos códigos sonoros.', correct:false, explanation:'Falso! Cada fabricante (AMI, Award, Phoenix, etc.) tem seus próprios códigos sonoros. É importante consultar a documentação específica.' },
-          { type:'match', question:'Associe os códigos sonoros AMI com seus significados:', pairs:[
-            { left:'1 bipe curto', right:'POST OK' },
-            { left:'3 bipes curtos', right:'Erro de RAM' },
-            { left:'5 bipes curtos', right:'Erro de CPU' },
-            { left:'1 longo + 2 curtos', right:'Erro de vídeo' }
-          ], explanation:'Conhecer estes códigos é essencial para diagnóstico rápido sem ferramentas adicionais.' },
-          { type:'multiple', question:'Se não há nenhum bipe durante o POST, qual é a causa mais provável?', options:['O computador está mudo','Speaker do sistema desconectado ou defeituoso','POST desativado','Windows está carregando'], correct:1, explanation:'A ausência de bipes pode indicar que o speaker interno está desconectado, defeituoso, ou que há uma falha tão grave que o sistema não consegue nem emitir sons.' },
-          { type:'multiple', question:'No BIOS Phoenix, como são organizados os códigos sonoros?', options:['Apenas bipes longos','Sequências de 3 grupos separados por pausas','Um bipe por componente','Apenas silêncio'], correct:1, explanation:'O Phoenix BIOS usa sequências como 1-3-1 (1 bipe, pausa, 3 bipes, pausa, 1 bipe), facilitando a identificação de diferentes tipos de erro.' },
-          { type:'truefalse', question:'É possível desativar completamente os bipes do POST no BIOS.', correct:true, explanation:'Verdadeiro! A maioria dos BIOS permite desativar os sons do POST nas configurações. Porém, isso não é recomendado para diagnóstico.' }
-        ]
-      },
-
-      /* … (mantido todo o restante das categorias: LEDs, Falhas, USB, ESD, Ferramentas, Diagnóstico Prático)
-           — exatamente como estava no seu arquivo. Não removi nada do jogo. … */
-
-    ];
-
-    // Badges
-    const allBadges = [
-      { id: 'first-challenge', icon:'🌟', name:'Primeira Missão', desc:'Completou seu primeiro desafio' },
-      { id: 'perfect-score',   icon:'💯', name:'Perfeição',      desc:'Acertou todas as questões de um desafio' },
-      { id: 'speed-demon',     icon:'⚡', name:'Velocista',      desc:'Completou um desafio em menos de 2 minutos' },
-      { id: 'level-5',         icon:'🎖️', name:'Técnico Sênior',desc:'Alcançou o nível 5' },
-      { id: 'all-challenges',  icon:'👑', name:'Mestre Supremo', desc:'Completou todos os desafios' },
-      ...challenges.map(c => ({ id: c.id, ...c.badge }))
-    ];
-
-    // Inicialização (igual ao original)
-    async function initializeApp() {
-      try {
-        if (window.elementSdk) {
-          window.elementSdk.init({
-            defaultConfig,
-            onConfigChange: async (newConfig) => { config = { ...config, ...newConfig }; updateUIFromConfig(); },
-            mapToCapabilities: () => ({ recolorables:[], borderables:[], fontEditable:undefined, fontSizeable:undefined }),
-            mapToEditPanelValues: (cfg) => new Map([
-              ["game_title",      cfg.game_title      || defaultConfig.game_title],
-              ["welcome_message", cfg.welcome_message || defaultConfig.welcome_message]
-            ])
-          });
-        }
-        if (window.dataSdk) {
-          const dataHandler = { onDataChanged(data){ allPlayers = data || []; } };
-          const initResult = await window.dataSdk.init(dataHandler);
-          if (!initResult.isOk) { console.error("Data SDK init failed, fallback local"); loadPlayersFromLocalStorage(); }
-        } else {
-          loadPlayersFromLocalStorage();
-        }
-        isInitializing = false;
-        setTimeout(() => {
-          document.getElementById('loading-screen').classList.add('hidden');
-          document.getElementById('main-menu').classList.remove('hidden');
-        }, 1500);
-      } catch (error) {
-        console.error("Initialization error:", error);
-        loadPlayersFromLocalStorage();
-        isInitializing = false;
-        document.getElementById('loading-screen').classList.add('hidden');
-        // (não há 'access-code-screen' no seu HTML — mantive só a remoção do loading)
-      }
-    }
-    function loadPlayersFromLocalStorage(){ const stored = localStorage.getItem('hardwareQuestPlayers'); if (stored){ try{ allPlayers = JSON.parse(stored);}catch{ allPlayers=[]; } } }
-    function savePlayersToLocalStorage(){ localStorage.setItem('hardwareQuestPlayers', JSON.stringify(allPlayers)); }
-    async function savePlayerToCloud(player){
-      if (!window.dataSdk || isInitializing){ savePlayersToLocalStorage(); return; }
-      try{
-        const existingPlayer = allPlayers.find(p => p.player_name === player.player_name);
-        if (existingPlayer && existingPlayer.__backendId){
-          const updateResult = await window.dataSdk.update(player);
-          if (updateResult.isError){ console.error("Failed to update player:", updateResult.error); savePlayersToLocalStorage(); }
-        } else {
-          const { __backendId, ...playerData } = player;
-          const createResult = await window.dataSdk.create(playerData);
-          if (createResult.isError){ console.error("Failed to create player:", createResult.error); savePlayersToLocalStorage(); }
-        }
-      } catch(e){ console.error("Error saving to cloud:", e); savePlayersToLocalStorage(); }
-    }
-    async function loadPlayersFromCloud(){
-      if (!window.dataSdk || isInitializing){ loadPlayersFromLocalStorage(); return; }
-      try{ if (!allPlayers || allPlayers.length === 0){ loadPlayersFromLocalStorage(); } }
-      catch(e){ console.error("Error loading from cloud:", e); loadPlayersFromLocalStorage(); }
-    }
-    function updateUIFromConfig(){
-      const titleEl = document.getElementById('game-title');
-      const welcomeEl = document.getElementById('welcome-text');
-      if (titleEl)   titleEl.textContent   = config.game_title      || defaultConfig.game_title;
-      if (welcomeEl) welcomeEl.textContent = config.welcome_message || defaultConfig.welcome_message;
-    }
-
-    // Eventos principais (do jogo original)
-    document.getElementById('start-game-btn').addEventListener('click', startGame);
-    document.getElementById('leaderboard-btn').addEventListener('click', showLeaderboard);
-    document.getElementById('close-leaderboard').addEventListener('click', hideLeaderboard);
-    document.getElementById('clear-ranking-btn').addEventListener('click', clearRanking);
-    document.getElementById('menu-btn').addEventListener('click', returnToMenu);
-    document.getElementById('result-continue').addEventListener('click', continueAfterResult);
-    document.getElementById('badge-continue').addEventListener('click', closeBadgeModal);
-
-    async function startGame(){
-      const nameInput = document.getElementById('player-name-input');
-      const playerName = nameInput.value.trim();
-      if (!playerName){ nameInput.classList.add('animate-shake','border-red-500'); setTimeout(()=> nameInput.classList.remove('animate-shake','border-red-500'), 500); return; }
-      const existingPlayer = allPlayers.find(p => p.player_name.toLowerCase() === playerName.toLowerCase());
-      if (existingPlayer){ currentPlayer = existingPlayer; }
-      else {
-        const newPlayer = { player_name:playerName, total_score:0, current_level:1, badges_earned:'', challenges_completed:0, created_at:new Date().toISOString() };
-        await savePlayerToCloud(newPlayer);
-        const idx = allPlayers.findIndex(p => p.player_name === playerName);
-        if (idx>=0){ currentPlayer = allPlayers[idx]; } else { allPlayers.push(newPlayer); currentPlayer = newPlayer; savePlayersToLocalStorage(); }
-      }
-      showGameDashboard();
-    }
-
-    function showGameDashboard(){ document.getElementById('main-menu').classList.add('hidden'); document.getElementById('game-dashboard').classList.remove('hidden'); updatePlayerDisplay(); renderChallengeSelection(); }
-
-    function updatePlayerDisplay(){
-      if (!currentPlayer) return;
-      const updatedPlayer = allPlayers.find(p => p.player_name === currentPlayer.player_name);
-      if (updatedPlayer){ currentPlayer = updatedPlayer; }
-      document.getElementById('player-avatar').textContent = currentPlayer.player_name.charAt(0).toUpperCase();
-      document.getElementById('player-display-name').textContent = currentPlayer.player_name;
-      document.getElementById('score-display').textContent = currentPlayer.total_score || 0;
-      document.getElementById('level-display').textContent = currentPlayer.current_level || 1;
-      document.getElementById('challenges-display').textContent = currentPlayer.challenges_completed || 0;
-      const xpForLevel = (currentPlayer.total_score || 0) % 1000;
-      document.getElementById('xp-display').textContent = `${xpForLevel}/1000 XP`;
-      document.getElementById('xp-bar').style.width  = `${(xpForLevel/1000)*100}%`;
-      renderBadges();
-    }
-
-    function renderBadges(){
-      const container = document.getElementById('badges-container');
-      const earnedBadges = (currentPlayer.badges_earned || '').split(',').filter(b => b);
-      if (earnedBadges.length === 0){ container.innerHTML = '<span class="text-slate-500 text-sm">Complete desafios para ganhar badges!</span>'; return; }
-      container.innerHTML = earnedBadges.map(badgeId=>{
-        const badge = allBadges.find(b=> b.id === badgeId);
-        if (!badge) return '';
-        return `
-          <div class="badge-earned bg-slate-700 px-3 py-2 rounded-lg flex items-center gap-2" title="${badge.desc}">
-            <span class="text-2xl">${badge.icon}</span>
-            <span class="text-sm text-slate-300">${badge.name}</span>
-          </div>`;
-      }).join('');
-    }
-
-    function renderChallengeSelection(){
-      const container = document.getElementById('challenge-selection');
-      container.innerHTML = '';
-      const completedChallenges = (currentPlayer.badges_earned || '').split(',');
-      challenges.forEach((challenge, index)=>{
-        const isCompleted = completedChallenges.includes(challenge.id);
-        const difficultyStars = '⭐'.repeat(challenge.difficulty);
-        const card = document.createElement('div');
-        card.className = `card-hover glass-effect rounded-xl p-6 cursor-pointer ${isCompleted ? 'opacity-75':''}`;
-        card.style.animationDelay = `${index*0.1}s`;
-        card.classList.add('animate-slide-in');
-        card.innerHTML = `
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-16 h-16 rounded-xl bg-gradient-to-br ${challenge.color} flex items-center justify-center text-3xl">${challenge.icon}</div>
-            ${isCompleted ? '<span class="text-emerald-400 text-2xl">✓</span>':''}
-          </div>
-          <h3 class="font-orbitron text-xl text-white mb-2">${challenge.title}</h3>
-          <p class="text-slate-400 text-sm mb-4">${challenge.description}</p>
-          <div class="flex justify-between items-center">
-            <span class="text-sm">${difficultyStars}</span>
-            <span class="text-emerald-400 font-bold">+${challenge.xpReward} XP</span>
-          </div>
-          <div class="mt-3 text-xs text-slate-500">${challenge.questions.length} questões</div>`;
-        card.addEventListener('click', ()=> startChallenge(challenge));
-        container.appendChild(card);
-      });
-    }
-
-    function startChallenge(challenge){
-      currentChallenge = challenge; currentQuestionIndex = 0; challengeScore = 0; questionsAnswered.clear();
-      document.getElementById('challenge-selection').classList.add('hidden');
-      document.getElementById('badges-section').classList.add('hidden');
-      document.getElementById('challenge-area').classList.remove('hidden');
-      renderCurrentQuestion();
-    }
-
-    function renderCurrentQuestion(){
-      const area = document.getElementById('challenge-area');
-      const question = currentChallenge.questions[currentQuestionIndex];
-      const totalQuestions = currentChallenge.questions.length;
-      let questionHTML = `
-        <div class="glass-effect rounded-xl p-6 animate-slide-in">
-          <div class="flex justify-between items-center mb-6">
-            <div>
-              <span class="text-emerald-400 font-semibold">${currentChallenge.title}</span>
-              <h2 class="font-orbitron text-2xl text-white">Questão ${currentQuestionIndex + 1}/${totalQuestions}</h2>
-            </div>
-            <div class="text-right">
-              <p class="text-slate-400 text-sm">Pontos neste desafio</p>
-              <p class="font-orbitron text-xl text-cyan-400">${challengeScore}</p>
-            </div>
-          </div>
-          <div class="w-full h-2 bg-slate-700 rounded-full mb-6">
-            <div class="progress-bar h-full rounded-full transition-all" style="width: ${(currentQuestionIndex / totalQuestions) * 100}%"></div>
-          </div>
-          <div class="bg-slate-800/50 rounded-lg p-6 mb-6">
-            <p class="text-xl text-white leading-relaxed">${question.question}</p>
-          </div>`;
-
-      // Render
-      switch (question.type){
-        case 'multiple':
-        case 'scenario': questionHTML += renderMultipleChoice(question); break;
-        case 'truefalse': questionHTML += renderTrueFalse(question); break;
-        case 'order':     questionHTML += renderOrderQuestion(question); break;
-        case 'match':     questionHTML += renderMatchQuestion(question); break;
-      }
-      questionHTML += `
-        <button id="skip-btn" class="mt-4 text-slate-500 hover:text-slate-300 transition-all">
-          Pular questão →
-        </button>
-      </div>`;
-      area.innerHTML = questionHTML;
-
-      document.getElementById('skip-btn').addEventListener('click', ()=> { showResultModal('⏭️','Questão Pulada', question.explanation, '+0 XP'); });
-      setupQuestionListeners(question);
-    }
-
-    function renderMultipleChoice(question){
-      return `
-        <div class="grid gap-3" id="options-container">
-          ${question.options.map((opt, idx)=>`
-            <button class="option-btn w-full text-left bg-slate-700 hover:bg-slate-600 p-4 rounded-lg transition-all border-2 border-transparent hover:border-emerald-500/50" data-index="${idx}">
-              <span class="inline-block w-8 h-8 rounded-full bg-slate-600 text-center leading-8 mr-3 font-bold">${String.fromCharCode(65 + idx)}</span>
-              ${opt}
-            </button>`).join('')}
-        </div>`;
-    }
-    function renderTrueFalse(){ return `
-      <div class="grid grid-cols-2 gap-4" id="options-container">
-        <button class="tf-btn bg-emerald-700 hover:bg-emerald-600 p-6 rounded-lg text-xl font-bold transition-all border-2 border-transparent hover:border-emerald-400" data-value="true">✓ VERDADEIRO</button>
-        <button class="tf-btn bg-red-700 hover:bg-red-600 p-6 rounded-lg text-xl font-bold transition-all border-2 border-transparent hover:border-red-400" data-value="false">✗ FALSO</button>
-      </div>`; }
-    function renderOrderQuestion(question){
-      const shuffled = [...question.items].sort(()=> Math.random()-0.5);
-      return `
-        <div class="space-y-2" id="order-container">
-          <p class="text-slate-400 mb-4">Arraste os itens para a ordem correta:</p>
-          ${shuffled.map(item => `
-            <div class="order-item bg-slate-700 p-4 rounded-lg cursor-move flex items-center gap-3 transition-all hover:bg-slate-600" draggable="true" data-original="${question.items.indexOf(item)}">
-              <span class="text-slate-400">☰</span>
-              <span class="font-medium">${item}</span>
-            </div>`).join('')}
+  <!-- DASHBOARD -->
+  <section id="viewDash" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="muted">TÉCNICO</div>
+          <div id="txtPlayer" class="big">—</div>
         </div>
-        <button id="confirm-order" class="mt-6 w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 py-4 rounded-lg font-bold text-lg transition-all">CONFIRMAR ORDEM</button>`;
-    }
-    function renderMatchQuestion(question){
-      const rights = [...question.pairs.map(p=>p.right)].sort(()=> Math.random()-0.5);
-      return `
-        <div class="grid md:grid-cols-2 gap-6" id="match-container">
-          <div class="space-y-3">
-            <p class="text-emerald-400 font-semibold mb-2">Termos</p>
-            ${question.pairs.map((pair, idx)=>`
-              <div class="match-left bg-slate-700 p-4 rounded-lg cursor-pointer transition-all hover:bg-emerald-700/50 border-2 border-transparent" data-index="${idx}">
-                ${pair.left}
-              </div>`).join('')}
-          </div>
-          <div class="space-y-3">
-            <p class="text-cyan-400 font-semibold mb-2">Definições</p>
-            ${rights.map((right)=>`
-              <div class="match-right bg-slate-700 p-4 rounded-lg cursor-pointer transition-all hover:bg-cyan-700/50 border-2 border-transparent" data-original="${question.pairs.findIndex(p=>p.right===right)}">
-                ${right}
-              </div>`).join('')}
-          </div>
+        <div class="grid g2" style="min-width:280px">
+          <div class="stat"><div class="muted">PONTUAÇÃO</div><div id="statScore" class="big">0</div></div>
+          <div class="stat"><div class="muted">NÍVEL</div><div id="statLevel" class="big">1</div></div>
         </div>
-        <button id="confirm-match" class="mt-6 w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 py-4 rounded-lg font-bold text-lg transition-all">CONFIRMAR ASSOCIAÇÕES</button>`;
-    }
+      </div>
+      <div class="mt8">
+        <div class="row" style="justify-content:space-between">
+          <strong>Progresso do Nível</strong>
+          <span class="muted"><span id="xpNow">0</span>/1000 XP</span>
+        </div>
+        <div class="bar"><i id="xpBar" style="width:0%"></i></div>
+      </div>
+    </div>
 
-    function setupQuestionListeners(question){
-      switch (question.type){
-        case 'multiple':
-        case 'scenario':
-          document.querySelectorAll('.option-btn').forEach(btn=>{
-            btn.addEventListener('click', ()=>{ const sel = parseInt(btn.dataset.index); checkAnswer(sel === question.correct, question); });
-          });
-          break;
-        case 'truefalse':
-          document.querySelectorAll('.tf-btn').forEach(btn=>{
-            btn.addEventListener('click', ()=>{ const sel = btn.dataset.value === 'true'; checkAnswer(sel === question.correct, question); });
-          });
-          break;
-        case 'order':
-          setupDragAndDrop();
-          document.getElementById('confirm-order').addEventListener('click', ()=>{
-            const items = document.querySelectorAll('.order-item');
-            const currentOrder = Array.from(items).map(it=> parseInt(it.dataset.original));
-            const ok = currentOrder.every((v,i)=> v === question.correctOrder[i]);
-            checkAnswer(ok, question);
-          });
-          break;
-        case 'match':
-          setupMatchGame(question);
-          break;
-      }
-    }
+    <div class="card">
+      <div class="h2 mb8">POST — Fundamentos</div>
+      <div id="questionBox"></div>
+    </div>
+  </section>
 
-    function setupDragAndDrop(){
-      const container = document.getElementById('order-container');
-      const items = container.querySelectorAll('.order-item');
-      let draggedItem = null; let touchStartY = 0;
+</div>
 
-      items.forEach(item=>{
-        item.addEventListener('dragstart', ()=>{ draggedItem=item; item.classList.add('opacity-50'); });
-        item.addEventListener('dragend', ()=>{ draggedItem.classList.remove('opacity-50'); draggedItem=null; });
-        item.addEventListener('dragover', e=>{ e.preventDefault(); item.classList.add('bg-emerald-700/30'); });
-        item.addEventListener('dragleave', ()=> item.classList.remove('bg-emerald-700/30'));
-        item.addEventListener('drop', e=>{
-          e.preventDefault(); item.classList.remove('bg-emerald-700/30');
-          if (draggedItem && draggedItem!==item){
-            const all = [...container.querySelectorAll('.order-item')];
-            const di = all.indexOf(draggedItem), ti = all.indexOf(item);
-            if (di < ti) item.parentNode.insertBefore(draggedItem, item.nextSibling);
-            else item.parentNode.insertBefore(draggedItem, item);
-          }
-        });
+<!-- MODAL RANKING -->
+<dialog id="dlgRank">
+  <div class="row" style="justify-content:space-between">
+    <div class="h2">🏆 Ranking (Top 10)</div>
+    <div class="row">
+      <button id="btnClear" class="btn err">🗑️ Limpar</button>
+      <button id="btnCloseRank" class="btn">✖</button>
+    </div>
+  </div>
+  <div id="rankList" class="mt8"></div>
+</dialog>
 
-        // toque (mobile)
-        item.addEventListener('touchstart', e=>{ touchStartY = e.touches[0].clientY; draggedItem=item; item.classList.add('bg-emerald-700/50'); });
-        item.addEventListener('touchmove', e=> e.preventDefault());
-        item.addEventListener('touchend', e=>{
-          const y = e.changedTouches[0].clientY; const diff = touchStartY - y;
-          const all = [...container.querySelectorAll('.order-item')]; const idx = all.indexOf(draggedItem);
-          if (Math.abs(diff) > 30){
-            if (diff>0 && idx<all.length-1) container.insertBefore(all[idx+1], draggedItem);
-            else if (diff<0 && idx>0)       container.insertBefore(draggedItem, all[idx-1]);
-          }
-          draggedItem.classList.remove('bg-emerald-700/50'); draggedItem=null;
-        });
-      });
-    }
-
-    let matchSelections = { left:null, right:null }; let matches=[];
-    function setupMatchGame(question){
-      matchSelections = { left:null, right:null }; matches=[];
-      document.querySelectorAll('.match-left').forEach(item=>{
-        item.addEventListener('click', ()=>{
-          document.querySelectorAll('.match-left').forEach(i=> i.classList.remove('border-emerald-400','bg-emerald-700/50'));
-          item.classList.add('border-emerald-400','bg-emerald-700/50');
-          matchSelections.left = parseInt(item.dataset.index);
-          tryMatch(question);
-        });
-      });
-      document.querySelectorAll('.match-right').forEach(item=>{
-        item.addEventListener('click', ()=>{
-          document.querySelectorAll('.match-right').forEach(i=> i.classList.remove('border-cyan-400','bg-cyan-700/50'));
-          item.classList.add('border-cyan-400','bg-cyan-700/50');
-          matchSelections.right = parseInt(item.dataset.original);
-          tryMatch(question);
-        });
-      });
-      document.getElementById('confirm-match').addEventListener('click', ()=>{
-        const ok = matches.length === question.pairs.length && matches.every(m=> m.left===m.right);
-        checkAnswer(ok, question);
-      });
-    }
-    function tryMatch(question){
-      if (matchSelections.left !== null && matchSelections.right !== null){
-        matches.push({ left:matchSelections.left, right:matchSelections.right });
-        const leftItem  = document.querySelector(`.match-left[data-index="${matchSelections.left}"]`);
-        const rightItem = document.querySelector(`.match-right[data-original="${matchSelections.right}"]`);
-        if (matchSelections.left === matchSelections.right){
-          leftItem.classList.add('bg-emerald-800','opacity-60'); rightItem.classList.add('bg-emerald-800','opacity-60');
-          leftItem.style.pointerEvents='none'; rightItem.style.pointerEvents='none';
-        }
-        document.querySelectorAll('.match-left').forEach(i=> i.classList.remove('border-emerald-400'));
-        document.querySelectorAll('.match-right').forEach(i=> i.classList.remove('border-cyan-400'));
-        matchSelections = { left:null, right:null };
-      }
-    }
-
-    function checkAnswer(isCorrect, question){
-      questionsAnswered.add(currentQuestionIndex);
-      let points = 0;
-      if (isCorrect){ points = Math.floor(currentChallenge.xpReward / currentChallenge.questions.length); challengeScore += points; }
-      const icon = isCorrect ? '✅':'❌';
-      const title= isCorrect ? 'CORRETO!':'INCORRETO';
-      const pointsText = isCorrect ? `+${points} XP` : '+0 XP';
-      showResultModal(icon, title, question.explanation, pointsText);
-    }
-
-    function showResultModal(icon, title, msg, pts){
-      document.getElementById('result-icon').textContent = icon;
-      const titleEl = document.getElementById('result-title');
-      titleEl.textContent = title;
-      titleEl.className = `font-orbitron text-2xl mb-2 ${icon==='✅'?'text-emerald-400':icon==='❌'?'text-red-400':'text-yellow-400'}`;
-      document.getElementById('result-message').textContent = msg;
-      document.getElementById('result-points').textContent  = pts;
-      document.getElementById('result-modal').classList.remove('hidden');
-    }
-
-    async function continueAfterResult(){
-      document.getElementById('result-modal').classList.add('hidden');
-      currentQuestionIndex++;
-      if (currentQuestionIndex >= currentChallenge.questions.length){ await finishChallenge(); }
-      else { renderCurrentQuestion(); }
-    }
-
-    async function finishChallenge(){
-      const newScore = (currentPlayer.total_score || 0) + challengeScore;
-      const newLevel = Math.floor(newScore/1000)+1;
-      const newCC    = (currentPlayer.challenges_completed || 0) + 1;
-
-      let badges = (currentPlayer.badges_earned || '').split(',').filter(b=>b);
-      const toAdd = [];
-      if (!badges.includes(currentChallenge.id)) { badges.push(currentChallenge.id); toAdd.push(currentChallenge.badge); }
-      if (!badges.includes('first-challenge') && newCC===1){ badges.push('first-challenge'); toAdd.push(allBadges.find(b=>b.id==='first-challenge')); }
-      if (challengeScore === currentChallenge.xpReward && !badges.includes('perfect-score')){ badges.push('perfect-score'); toAdd.push(allBadges.find(b=>b.id==='perfect-score')); }
-      if (newLevel>=5 && !badges.includes('level-5')){ badges.push('level-5'); toAdd.push(allBadges.find(b=>b.id==='level-5')); }
-      if (newCC>=challenges.length && !badges.includes('all-challenges')){ badges.push('all-challenges'); toAdd.push(allBadges.find(b=>b.id==='all-challenges')); }
-
-      currentPlayer.total_score = newScore;
-      currentPlayer.current_level = newLevel;
-      currentPlayer.challenges_completed = newCC;
-      currentPlayer.badges_earned = badges.join(',');
-
-      const idx = allPlayers.findIndex(p=> p.player_name === currentPlayer.player_name);
-      if (idx>=0){ allPlayers[idx]=currentPlayer; }
-      await savePlayerToCloud(currentPlayer); savePlayersToLocalStorage();
-
-      for (const b of toAdd){ if (b){ await showBadgeEarned(b); } }
-
-      document.getElementById('challenge-area').classList.add('hidden');
-      document.getElementById('challenge-selection').classList.remove('hidden');
-      document.getElementById('badges-section').classList.remove('hidden');
-      updatePlayerDisplay(); renderChallengeSelection();
-    }
-
-    function showBadgeEarned(badge){
-      return new Promise(resolve=>{
-        document.getElementById('badge-earned-icon').textContent = badge.icon;
-        document.getElementById('badge-earned-name').textContent = badge.name;
-        document.getElementById('badge-earned-desc').textContent = badge.desc;
-        document.getElementById('badge-modal').classList.remove('hidden');
-        const close = ()=>{ document.getElementById('badge-modal').classList.add('hidden'); document.getElementById('badge-continue').removeEventListener('click', close); resolve(); };
-        document.getElementById('badge-continue').addEventListener('click', close);
-      });
-    }
-    function closeBadgeModal(){ document.getElementById('badge-modal').classList.add('hidden'); }
-
-    function showLeaderboard(){ updateLeaderboard(); document.getElementById('leaderboard-modal').classList.remove('hidden'); }
-    function hideLeaderboard(){ document.getElementById('leaderboard-modal').classList.add('hidden'); }
-
-    // (versão local — será substituída pela integração online logo abaixo)
-    function clearRanking(){
-      const btn = document.getElementById('clear-ranking-btn');
-      if (btn.dataset.confirming === 'true'){
-        allPlayers=[]; savePlayersToLocalStorage();
-        btn.dataset.confirming='false'; btn.textContent='🗑️ Limpar';
-        btn.classList.remove('bg-red-900','border-red-600');
-        btn.classList.add('text-red-400','hover:text-red-300');
-        updateLeaderboard(); hideLeaderboard();
-        showResult
+<!-- MODAL RESULTADO -->
+<dialog id="dlgResult" class="center">
+  <div style="max-width:520px">
+    <div id="resIcon" style="font-size:46px">✅</div>
+    <div id="resTitle" class="h2">CORRETO!</div>
+    <div id="resText" class="mb16 muted">—</div>
+    <div id="resXP"
