@@ -1,685 +1,2730 @@
+
 <!doctype html>
 <html lang="pt-BR" class="h-full">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Hardware Diagnostics Quest</title>
-
-  <!-- Tailwind (CDN) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
-  <!-- Estilos -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&amp;family=Rajdhani:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
+    
     .font-orbitron { font-family: 'Orbitron', monospace; }
     .font-rajdhani { font-family: 'Rajdhani', sans-serif; }
-    @keyframes pulse-glow { 0%,100%{box-shadow:0 0 20px rgba(0,255,136,.3)} 50%{box-shadow:0 0 40px rgba(0,255,136,.6)} }
-    @keyframes slide-in { from{transform:translateX(-100%);opacity:0} to{transform:translateX(0);opacity:1} }
-    @keyframes bounce-in { 0%{transform:scale(0)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
-    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
-    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-    @media (max-width: 640px){ button{min-height:44px;min-width:44px} input{min-height:44px;font-size:16px} .font-orbitron{font-size:clamp(1rem,2.5vw,2rem)} }
-    .animate-pulse-glow{animation:pulse-glow 2s infinite}
-    .animate-slide-in{animation:slide-in .5s ease-out}
-    .animate-bounce-in{animation:bounce-in .4s ease-out}
-    .animate-shake{animation:shake .5s ease-in-out}
-    .animate-float{animation:float 3s ease-in-out infinite}
-    .glass-effect{background:rgba(15,23,42,.8);backdrop-filter:blur(10px);border:1px solid rgba(0,255,136,.2)}
-    .progress-bar{background:linear-gradient(90deg,#00ff88,#00ccff);box-shadow:0 0 20px rgba(0,255,136,.5)}
-    .card-hover{transition:all .3s ease}
-    @media (hover:hover){ .card-hover:hover{transform:translateY(-5px);box-shadow:0 10px 40px rgba(0,255,136,.3)} }
-    @media (max-width:640px){ .card-hover:active{transform:translateY(-3px);box-shadow:0 5px 20px rgba(0,255,136,.3)} }
-    .btn-cyber{position:relative;overflow:hidden;transition:all .3s ease}
-    .btn-cyber::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transition:left .5s ease}
-    .btn-cyber:hover::before{left:100%}
-    .badge-earned{animation:bounce-in .5s ease-out}
-    .circuit-pattern{background-image:linear-gradient(rgba(0,255,136,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,.03) 1px,transparent 1px);background-size:50px 50px}
-    body { box-sizing: border-box; }
-    @keyframes rowGlow{0%{box-shadow:0 0 0 0 rgba(16,185,129,.55)}60%{box-shadow:0 0 0 12px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
-    .row-highlight{border:1px solid rgba(16,185,129,.6)!important;box-shadow:0 0 0 3px rgba(16,185,129,.35);animation:rowGlow 2s ease-out infinite}
+    
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.3); }
+      50% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.6); }
+    }
+    
+    @keyframes slide-in {
+      from { transform: translateX(-100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes bounce-in {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+    
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    
+    @keyframes blink {
+      50% { border-color: transparent; }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    /* Mobile-friendly touch targets */
+    @media (max-width: 640px) {
+      button {
+        min-height: 44px;
+        min-width: 44px;
+      }
+      
+      input {
+        min-height: 44px;
+        font-size: 16px;
+      }
+      
+      .font-orbitron {
+        font-size: clamp(1rem, 2.5vw, 2rem);
+      }
+    }
+    
+    @keyframes scan-line {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+    
+    .animate-pulse-glow { animation: pulse-glow 2s infinite; }
+    .animate-slide-in { animation: slide-in 0.5s ease-out; }
+    .animate-bounce-in { animation: bounce-in 0.4s ease-out; }
+    .animate-shake { animation: shake 0.5s ease-in-out; }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+    
+    .glass-effect {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 255, 136, 0.2);
+    }
+    
+    .terminal-text {
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 0 10px currentColor;
+    }
+    
+    .scan-line::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 136, 0.5), transparent);
+      animation: scan-line 3s linear infinite;
+    }
+    
+    .progress-bar {
+      background: linear-gradient(90deg, #00ff88, #00ccff);
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+    }
+    
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+    
+    @media (hover: hover) {
+      .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 40px rgba(0, 255, 136, 0.3);
+      }
+    }
+    
+    @media (max-width: 640px) {
+      .card-hover:active {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+      }
+    }
+    
+    .btn-cyber {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-cyber::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+    
+    .btn-cyber:hover::before {
+      left: 100%;
+    }
+    
+    .badge-earned {
+      animation: bounce-in 0.5s ease-out;
+    }
+    
+    .circuit-pattern {
+      background-image: 
+        linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
   </style>
-</head>
-
-<body class="h-full bg-slate-900 text-white font-rajdhani overflow-auto">
-<div id="app" class="min-h-full w-full circuit-pattern">
-
-  <!-- Loading -->
-  <div id="loading-screen" class="min-h-full flex items-center justify-center">
+  <style>body { box-sizing: border-box; }</style>
+  </head>
+ <body class="h-full bg-slate-900 text-white font-rajdhani overflow-auto">
+  <div id="app" class="min-h-full w-full circuit-pattern"><!-- Loading Screen -->
+   <div id="loading-screen" class="min-h-full flex items-center justify-center">
     <div class="text-center">
-      <div class="w-20 h-20 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-      <p class="text-emerald-400 font-orbitron text-xl">INICIALIZANDO SISTEMA...</p>
+     <div class="w-20 h-20 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+     <p class="text-emerald-400 font-orbitron text-xl">INICIALIZANDO SISTEMA...</p>
     </div>
-  </div>
-
-  <!-- Main Menu -->
-  <div id="main-menu" class="hidden min-h-full flex flex-col items-center justify-center p-6">
+   </div><!-- Main Menu -->
+   <div id="main-menu" class="hidden min-h-full flex flex-col items-center justify-center p-6">
     <div class="text-center mb-8 animate-slide-in">
-      <h1 id="game-title" class="font-orbitron text-3xl sm:text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 mb-2">HARDWARE DIAGNOSTICS</h1>
-      <p class="text-lg sm:text-2xl text-emerald-300">QUEST</p>
-      <p id="welcome-text" class="text-slate-400 mt-3 text-sm sm:text-base">Bem-vindo ao desafio!</p>
+     <h1 id="game-title" class="font-orbitron text-3xl sm:text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 mb-2">HARDWARE DIAGNOSTICS</h1>
+     <p class="text-lg sm:text-2xl text-emerald-300">QUEST</p>
+     <p id="welcome-text" class="text-slate-400 mt-3 text-sm sm:text-base">Bem-vindo ao desafio!</p>
     </div>
-
     <div class="glass-effect rounded-2xl p-6 sm:p-8 w-full max-w-md animate-pulse-glow">
-      <div class="mb-6">
-        <label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">IDENTIFICAÇÃO DO TÉCNICO</label>
-        <input type="text" id="player-name-input" placeholder="Seu nome..." class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base" />
-      </div>
-
-      <!-- TURMA -->
-      <div class="mb-2">
-        <label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">TURMA</label>
-        <input type="text" id="class-group-input" placeholder="Ex.: TI-101" class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base" />
-      </div>
-
-      <button id="start-game-btn" class="btn-cyber w-full bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-bold py-3 rounded-lg text-base sm:text-lg font-orbitron transition-all">🚀 INICIAR MISSÃO</button>
-      <button id="leaderboard-btn" class="btn-cyber w-full mt-4 bg-slate-700 text-emerald-400 font-bold py-2 rounded-lg text-sm sm:text-base transition-all">🏆 RANKING</button>
+     <div class="mb-6"><label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">IDENTIFICAÇÃO DO TÉCNICO</label> <input type="text" id="player-name-input" placeholder="Seu nome..." class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">
+     </div><!-- NOVO CAMPO: TURMA -->
+<div class="mb-2">
+  <label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">TURMA</label>
+  <input type="text" id="class-group-input" placeholder="Ex.: TI-101" class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">
+</div><button id="start-game-btn" class="btn-cyber w-full bg-gradient-to-r from-emerald-600 to-cyan-600 text-white font-bold py-3 rounded-lg text-base sm:text-lg font-orbitron transition-all"> 🚀 INICIAR MISSÃO </button> <button id="leaderboard-btn" class="btn-cyber w-full mt-4 bg-slate-700 text-emerald-400 font-bold py-2 rounded-lg text-sm sm:text-base transition-all"> 🏆 RANKING </button>
     </div>
-
     <div class="mt-8 text-center text-slate-500">
-      <p>AULA 16 — Teste e Diagnóstico de Hardware</p>
-      <p class="text-sm mt-2">Aprenda sobre POST, códigos de erro e diagnóstico de falhas</p>
+     <p>AULA 16 — Teste e Diagnóstico de Hardware</p>
+     <p class="text-sm mt-2">Aprenda sobre POST, códigos de erro e diagnóstico de falhas</p>
     </div>
-  </div>
-
-  <!-- Dashboard -->
-  <div id="game-dashboard" class="hidden min-h-full p-4 md:p-6">
-
+   </div><!-- Game Dashboard -->
+   <div id="game-dashboard" class="hidden min-h-full p-4 md:p-6"><!-- Header -->
     <header class="glass-effect rounded-xl p-4 mb-6">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center gap-4">
-          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center font-orbitron font-bold text-xl"><span id="player-avatar">T</span></div>
-          <div>
-            <p class="text-emerald-400 text-sm">TÉCNICO</p>
-            <p id="player-display-name" class="font-bold text-lg">Nome</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-6">
-          <div class="text-center">
-            <p class="text-emerald-400 text-sm">PONTUAÇÃO</p>
-            <p id="score-display" class="font-orbitron text-2xl font-bold text-cyan-400">0</p>
-          </div>
-          <div class="text-center">
-            <p class="text-emerald-400 text-sm">NÍVEL</p>
-            <p id="level-display" class="font-orbitron text-2xl font-bold text-yellow-400">1</p>
-          </div>
-          <div class="text-center">
-            <p class="text-emerald-400 text-sm">DESAFIOS</p>
-            <p id="challenges-display" class="font-orbitron text-2xl font-bold text-purple-400">0</p>
-          </div>
-        </div>
-        <button id="menu-btn" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg transition-all">☰ Menu</button>
+     <div class="flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+       <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center font-orbitron font-bold text-xl"><span id="player-avatar">T</span>
+       </div>
+       <div>
+        <p class="text-emerald-400 text-sm">TÉCNICO</p>
+        <p id="player-display-name" class="font-bold text-lg">Nome</p>
+       </div>
       </div>
-
-      <div class="mt-4">
-        <div class="flex justify-between text-sm mb-1"><span class="text-slate-400">Progresso do Nível</span> <span id="xp-display" class="text-emerald-400">0/1000 XP</span></div>
-        <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
-          <div id="xp-bar" class="progress-bar h-full rounded-full transition-all duration-500" style="width:0%"></div>
-        </div>
+      <div class="flex items-center gap-6">
+       <div class="text-center">
+        <p class="text-emerald-400 text-sm">PONTUAÇÃO</p>
+        <p id="score-display" class="font-orbitron text-2xl font-bold text-cyan-400">0</p>
+       </div>
+       <div class="text-center">
+        <p class="text-emerald-400 text-sm">NÍVEL</p>
+        <p id="level-display" class="font-orbitron text-2xl font-bold text-yellow-400">1</p>
+       </div>
+       <div class="text-center">
+        <p class="text-emerald-400 text-sm">DESAFIOS</p>
+        <p id="challenges-display" class="font-orbitron text-2xl font-bold text-purple-400">0</p>
+       </div>
+      </div><button id="menu-btn" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg transition-all"> ☰ Menu </button>
+     </div><!-- Progress Bar -->
+     <div class="mt-4">
+      <div class="flex justify-between text-sm mb-1"><span class="text-slate-400">Progresso do Nível</span> <span id="xp-display" class="text-emerald-400">0/1000 XP</span>
       </div>
-    </header>
-
-    <!-- Badges -->
+      <div class="w-full h-3 bg-slate-700 rounded-full overflow-hidden">
+       <div id="xp-bar" class="progress-bar h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+      </div>
+     </div>
+    </header><!-- Badges Section -->
     <div id="badges-section" class="glass-effect rounded-xl p-4 mb-6">
-      <h3 class="text-emerald-400 font-semibold mb-3">🏅 BADGES CONQUISTADAS</h3>
-      <div id="badges-container" class="flex flex-wrap gap-3"><span class="text-slate-500 text-sm">Complete desafios para ganhar badges!</span></div>
+     <h3 class="text-emerald-400 font-semibold mb-3">🏅 BADGES CONQUISTADAS</h3>
+     <div id="badges-container" class="flex flex-wrap gap-3"><span class="text-slate-500 text-sm">Complete desafios para ganhar badges!</span>
+     </div>
+    </div><!-- Challenge Selection -->
+    <div id="challenge-selection" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"><!-- Challenge cards will be inserted here -->
+    </div><!-- Active Challenge Area -->
+    <div id="challenge-area" class="hidden"><!-- Challenge content will be inserted here -->
     </div>
-
-    <!-- Seleção de Desafios -->
-    <div id="challenge-selection" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"><!-- Cards --></div>
-
-    <!-- Área do Desafio -->
-    <div id="challenge-area" class="hidden"><!-- Conteúdo --></div>
-  </div>
-
-  <!-- Leaderboard Modal -->
-  <div id="leaderboard-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+   </div><!-- Leaderboard Modal -->
+   <div id="leaderboard-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
     <div class="glass-effect rounded-2xl p-6 w-full max-w-lg max-h-[80%] overflow-auto">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="font-orbitron text-2xl text-emerald-400">🏆 RANKING</h2>
-        <div class="flex gap-2">
-          <button id="clear-ranking-btn" class="text-red-400 hover:text-red-300 text-sm px-3 py-1 rounded border border-red-500/50 hover:border-red-400 transition-all">🗑️ Limpar</button>
-          <button id="close-leaderboard" class="text-slate-400 hover:text-white text-2xl">×</button>
-        </div>
+     <div class="flex justify-between items-center mb-6">
+      <h2 class="font-orbitron text-2xl text-emerald-400">🏆 RANKING</h2>
+      <div class="flex gap-2">
+       <button id="clear-ranking-btn" class="text-red-400 hover:text-red-300 text-sm px-3 py-1 rounded border border-red-500/50 hover:border-red-400 transition-all">🗑️ Limpar</button> <button id="close-leaderboard" class="text-slate-400 hover:text-white text-2xl">×</button>
       </div>
-      <div id="leaderboard-list" class="space-y-3"></div>
+     </div>
+     <div id="leaderboard-list" class="space-y-3"><!-- Leaderboard entries will be inserted here -->
+     </div>
     </div>
-  </div>
-
-  <!-- Result Modal -->
-  <div id="result-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+   </div><!-- Result Modal -->
+   <div id="result-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
     <div class="glass-effect rounded-2xl p-8 w-full max-w-md text-center animate-bounce-in">
-      <div id="result-icon" class="text-6xl mb-4">✅</div>
-      <h2 id="result-title" class="font-orbitron text-2xl mb-2">CORRETO!</h2>
-      <p id="result-message" class="text-slate-300 mb-4">Explicação aqui</p>
-      <div id="result-points" class="text-emerald-400 font-bold text-xl mb-6">+100 XP</div>
-      <button id="result-continue" class="btn-cyber bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 px-8 py-3 rounded-lg font-bold text-lg">CONTINUAR</button>
+     <div id="result-icon" class="text-6xl mb-4">
+      ✅
+     </div>
+     <h2 id="result-title" class="font-orbitron text-2xl mb-2">CORRETO!</h2>
+     <p id="result-message" class="text-slate-300 mb-4">Explicação aqui</p>
+     <div id="result-points" class="text-emerald-400 font-bold text-xl mb-6">
+      +100 XP
+     </div><button id="result-continue" class="btn-cyber bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 px-8 py-3 rounded-lg font-bold text-lg"> CONTINUAR </button>
     </div>
-  </div>
-
-  <!-- Badge Modal -->
-  <div id="badge-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+   </div><!-- Badge Earned Modal -->
+   <div id="badge-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
     <div class="glass-effect rounded-2xl p-8 w-full max-w-md text-center animate-bounce-in">
-      <div class="text-8xl mb-4 animate-float" id="badge-earned-icon">🏅</div>
-      <h2 class="font-orbitron text-2xl text-yellow-400 mb-2">BADGE CONQUISTADA!</h2>
-      <p id="badge-earned-name" class="text-white text-xl mb-4">Nome da Badge</p>
-      <p id="badge-earned-desc" class="text-slate-400 mb-6">Descrição</p>
-      <button id="badge-continue" class="btn-cyber bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 px-8 py-3 rounded-lg font-bold text-lg">INCRÍVEL!</button>
+     <div class="text-8xl mb-4 animate-float" id="badge-earned-icon">
+      🏅
+     </div>
+     <h2 class="font-orbitron text-2xl text-yellow-400 mb-2">BADGE CONQUISTADA!</h2>
+     <p id="badge-earned-name" class="text-white text-xl mb-4">Nome da Badge</p>
+     <p id="badge-earned-desc" class="text-slate-400 mb-6">Descrição</p><button id="badge-continue" class="btn-cyber bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 px-8 py-3 rounded-lg font-bold text-lg"> INCRÍVEL! </button>
     </div>
+   </div>
   </div>
-
-</div>
-
-<!-- =========================
-     LÓGICA DO JOGO
-     ========================= -->
-<script>
-/* Estado */
-const defaultConfig = { game_title: "HARDWARE DIAGNOSTICS", welcome_message: "Bem-vindo ao desafio de diagnóstico de hardware!" };
-let config = { ...defaultConfig };
-let currentPlayer = null;
-let currentChallenge = null;
-let currentQuestionIndex = 0;
-let challengeScore = 0;
-let questionsAnswered = new Set();
-
-/* DESAFIOS (completos) */
-const challenges = [
-  /* === POST - Fundamentos === */
-  { id:'post-basics', title:'POST - Fundamentos', description:'Aprenda sobre o Power-On Self-Test', icon:'🔌', color:'from-blue-600 to-blue-800', difficulty:1, xpReward:150, badge:{icon:'🔌', name:'Mestre do POST', desc:'Completou os fundamentos do POST'}, questions:[
-    { type:'multiple', question:'O que significa a sigla POST?', options:['Power-On Self-Test','Program Operating System Test','Power Output Signal Test','Processor On Startup Test'], correct:0, explanation:'POST significa Power-On Self-Test (Auto-Teste de Inicialização).' },
-    { type:'multiple', question:'Qual é a principal função do POST?', options:['Iniciar o sistema operacional','Verificar o funcionamento básico do hardware','Conectar à internet','Carregar drivers'], correct:1, explanation:'Verifica CPU, RAM, vídeo, periféricos essenciais.' },
-    { type:'multiple', question:'O POST é executado por qual componente?', options:['Sistema Operacional','Placa de Vídeo','BIOS/UEFI','Processador sozinho'], correct:2, explanation:'Rotina do BIOS/UEFI.' },
-    { type:'truefalse', question:'O POST é executado toda vez que o computador é ligado.', correct:true, explanation:'Sim, a cada boot.' },
-    { type:'multiple', question:'Qual componente é testado PRIMEIRO durante o POST?', options:['Disco rígido','Teclado','CPU e registradores','Monitor'], correct:2, explanation:'CPU e registradores.' },
-    { type:'order', question:'Ordene a sequência CORRETA do POST:', items:['Teste da CPU','Teste da memória RAM','Inicialização do vídeo','Teste dos periféricos'], correctOrder:[0,1,2,3], explanation:'CPU → RAM → Vídeo → Periféricos.' },
-    { type:'multiple', question:'O que acontece se o POST detectar uma falha crítica?', options:['O Windows inicia normalmente','O computador emite bipes de erro','O POST é ignorado','O disco é formatado'], correct:1, explanation:'Bipes/LEDs de erro.' },
-    { type:'truefalse', question:'Um POST bem-sucedido geralmente emite um único bipe curto.', correct:true, explanation:'Correto na maioria dos BIOS.' }
-  ]},
-
-  /* === Códigos Sonoros === */
-  { id:'beep-codes', title:'Códigos Sonoros', description:'Interprete os bipes de erro do BIOS', icon:'🔊', color:'from-purple-600 to-purple-800', difficulty:2, xpReward:200, badge:{icon:'🔊', name:'Intérprete de Bipes', desc:'Dominou os códigos sonoros do BIOS'}, questions:[
-    { type:'multiple', question:'Por que o BIOS usa códigos sonoros?', options:['Mais moderno','Placa de vídeo pode estar com defeito','Economiza energia','É mais bonito'], correct:1, explanation:'Sem vídeo, os bipes informam erro.' },
-    { type:'multiple', question:'AMI: 1 longo + 3 curtos significa:', options:['Teclado','RAM','Placa de vídeo','POST ok'], correct:2, explanation:'Erro de vídeo.' },
-    { type:'multiple', question:'Bipes contínuos sem parar indicam:', options:['Tudo ok','Erro de RAM','Erro de teclado','Disco cheio'], correct:1, explanation:'RAM defeituosa/mal encaixada.' },
-    { type:'truefalse', question:'Todos os fabricantes usam os mesmos códigos.', correct:false, explanation:'AMI, Award, Phoenix variam.' },
-    { type:'match', question:'Associe (AMI):', pairs:[
-      {left:'1 bipe curto', right:'POST OK'},
-      {left:'3 bipes curtos', right:'Erro de RAM'},
-      {left:'5 bipes curtos', right:'Erro de CPU'},
-      {left:'1 longo + 2 curtos', right:'Erro de vídeo'}
-    ], explanation:'Tabela útil para diagnóstico.' },
-    { type:'multiple', question:'Sem nenhum bipe no POST:', options:['PC mudo','Speaker desconectado ou defeituoso','POST desativado','Windows carregando'], correct:1, explanation:'Verifique o speaker.' },
-    { type:'multiple', question:'Phoenix organiza códigos em:', options:['Só longos','3 grupos separados por pausas','Um por componente','Silêncio'], correct:1, explanation:'Ex.: 1-3-1.' },
-    { type:'truefalse', question:'É possível desativar os bipes no BIOS.', correct:true, explanation:'Não recomendado.' }
-  ]},
-
-  /* === LEDs de Diagnóstico === */
-  { id:'led-diagnostics', title:'LEDs de Diagnóstico', description:'Entenda os indicadores luminosos', icon:'💡', color:'from-yellow-600 to-orange-600', difficulty:2, xpReward:180, badge:{icon:'💡', name:'Especialista em LEDs', desc:'Dominou diagnóstico por LEDs'}, questions:[
-    { type:'multiple', question:'Vantagem dos LEDs sobre bipes:', options:['Mais baratos','Identificação visual em ambiente barulhento','Menor consumo','Mais bonitos'], correct:1, explanation:'Feedback visual permanente.' },
-    { type:'multiple', question:'LED de falha de CPU costuma ser:', options:['Verde','Amarelo','Vermelho','Azul'], correct:2, explanation:'Erro crítico.' },
-    { type:'truefalse', question:'Placas gamer têm display de 2 dígitos.', correct:true, explanation:'Debug LED com códigos hex.' },
-    { type:'multiple', question:'Todos LEDs apagados =', options:['Tudo ok','Problema de energia/fonte','Disco cheio','SO corrompido'], correct:1, explanation:'Sem energia na placa.' },
-    { type:'multiple', question:'LED “DRAM” aceso indica:', options:['RAM ok','Problema na RAM','Acesso a disco','Rede'], correct:1, explanation:'Falha de RAM.' },
-    { type:'order', question:'Ordem típica dos LEDs:', items:['CPU','DRAM','VGA','BOOT'], correctOrder:[0,1,2,3], explanation:'Segue o POST.' },
-    { type:'multiple', question:'VGA aceso permanente:', options:['Reiniciar Windows','Checar placa de vídeo/conexões','Trocar teclado','Formatar disco'], correct:1, explanation:'Encaixe/cabos da GPU.' },
-    { type:'truefalse', question:'LED do HD pisca com I/O de disco.', correct:true, explanation:'Correto.' }
-  ]},
-
-  /* === Falhas Comuns === */
-  { id:'common-failures', title:'Falhas Comuns', description:'Diagnostique problemas frequentes', icon:'🔧', color:'from-red-600 to-red-800', difficulty:3, xpReward:250, badge:{icon:'🔧', name:'Detetive de Hardware', desc:'Especialista em falhas comuns'}, questions:[
-    { type:'scenario', question:'Liga, tela preta e 3 bipes curtos:', options:['HD com defeito','RAM com problema','Fonte fraca','Cabo de vídeo solto'], correct:1, explanation:'AMI: RAM.' },
-    { type:'scenario', question:'Não liga nada (sem LEDs/fans). Verificar primeiro:', options:['Driver de vídeo','Fonte/cabos de energia','Sistema operacional','Antivírus'], correct:1, explanation:'Energia.' },
-    { type:'multiple', question:'Testar fonte sem placa-mãe:', options:['Multímetro','Testador ATX','Osciloscópio','Todas'], correct:3, explanation:'Todas ajudam.' },
-    { type:'scenario', question:'Reinicia em jogos/tarefas pesadas:', options:['Vírus','Superaquecimento ou fonte fraca','Disco cheio','Windows desatualizado'], correct:1, explanation:'Proteção térmica ou PSU fraca.' },
-    { type:'multiple', question:'BSOD causada por:', options:['Software apenas','Erro crítico HW ou SW','Problema de monitor','Atualização'], correct:1, explanation:'RAM, drivers, disco etc.' },
-    { type:'truefalse', question:'Capacitores estufados = defeito.', correct:true, explanation:'Falha iminente.' },
-    { type:'scenario', question:'Passa POST e reinicia antes do Windows:', options:['RAM','Boot corrompido/Disco','Monitor','Teclado'], correct:1, explanation:'MBR/FS/SSD.' },
-    { type:'multiple', question:'Diagnóstico de RAM intermitente:', options:['Trocar CPU','MemTest86','Formatar disco','Reinstalar drivers'], correct:1, explanation:'Teste exaustivo.' }
-  ]},
-
-  /* === USB, ESD, Ferramentas, Prático (resumidos por espaço) === */
-  /* Você pode manter/expandir as categorias extras exatamente como já tinha */
-];
-
-/* Badges */
-const allBadges = [
-  { id:'first-challenge', icon:'🌟', name:'Primeira Missão', desc:'Completou seu primeiro desafio' },
-  { id:'perfect-score',   icon:'💯', name:'Perfeição',       desc:'Acertou todas as questões de um desafio' },
-  { id:'level-5',         icon:'🎖️', name:'Técnico Sênior',  desc:'Alcançou o nível 5' },
-  { id:'all-challenges',  icon:'👑', name:'Mestre Supremo',   desc:'Completou todos os desafios' },
-  ...challenges.map(c => ({ id:c.id, ...c.badge }))
-];
-
-/* UI helpers */
-function updateUIFromConfig(){
-  const t = document.getElementById('game-title');
-  const w = document.getElementById('welcome-text');
-  if (t) t.textContent = config.game_title || defaultConfig.game_title;
-  if (w) w.textContent = config.welcome_message || defaultConfig.welcome_message;
-}
-
-function showGameDashboard(){
-  document.getElementById('main-menu').classList.add('hidden');
-  document.getElementById('game-dashboard').classList.remove('hidden');
-  updatePlayerDisplay();
-  renderChallengeSelection();
-}
-
-function updatePlayerDisplay(){
-  if (!currentPlayer) return;
-  document.getElementById('player-avatar').textContent = currentPlayer.player_name.charAt(0).toUpperCase();
-  document.getElementById('player-display-name').textContent = currentPlayer.player_name;
-  document.getElementById('score-display').textContent = currentPlayer.total_score || 0;
-  document.getElementById('level-display').textContent = currentPlayer.current_level || 1;
-  document.getElementById('challenges-display').textContent = currentPlayer.challenges_completed || 0;
-  const xp = (currentPlayer.total_score || 0) % 1000;
-  document.getElementById('xp-display').textContent = `${xp}/1000 XP`;
-  document.getElementById('xp-bar').style.width = `${(xp/1000)*100}%`;
-  renderBadges();
-}
-
-function renderBadges(){
-  const container = document.getElementById('badges-container');
-  const earned = (currentPlayer?.badges_earned || '').split(',').filter(Boolean);
-  if (!earned.length){
-    container.innerHTML = '<span class="text-slate-500 text-sm">Complete desafios para ganhar badges!</span>';
-    return;
-  }
-  container.innerHTML = earned.map(id => {
-    const b = allBadges.find(x => x.id === id); if (!b) return '';
-    return `<div class="badge-earned bg-slate-700 px-3 py-2 rounded-lg flex items-center gap-2" title="${b.desc}">
-      <span class="text-2xl">${b.icon}</span><span class="text-sm text-slate-300">${b.name}</span></div>`;
-  }).join('');
-}
-
-function renderChallengeSelection(){
-  const container = document.getElementById('challenge-selection');
-  container.innerHTML = '';
-  const completed = (currentPlayer?.badges_earned || '').split(',');
-  challenges.forEach((c, i) => {
-    const done = completed.includes(c.id);
-    const card = document.createElement('div');
-    card.className = `card-hover glass-effect rounded-xl p-6 cursor-pointer ${done?'opacity-75':''}`;
-    card.style.animationDelay = `${i*0.1}s`;
-    card.classList.add('animate-slide-in');
-    card.innerHTML = `
-      <div class="flex items-start justify-between mb-4">
-        <div class="w-16 h-16 rounded-xl bg-gradient-to-br ${c.color} flex items-center justify-center text-3xl">${c.icon}</div>
-        ${done?'<span class="text-emerald-400 text-2xl">✓</span>':''}
-      </div>
-      <h3 class="font-orbitron text-xl text-white mb-2">${c.title}</h3>
-      <p class="text-slate-400 text-sm mb-4">${c.description}</p>
-      <div class="flex justify-between items-center"><span class="text-sm">${'⭐'.repeat(c.difficulty)}</span>
-        <span class="text-emerald-400 font-bold">+${c.xpReward} XP</span></div>
-      <div class="mt-3 text-xs text-slate-500">${c.questions.length} questões</div>`;
-    card.addEventListener('click', () => startChallenge(c));
-    container.appendChild(card);
-  });
-}
-
-function startChallenge(challenge){
-  currentChallenge = challenge;
-  currentQuestionIndex = 0;
-  challengeScore = 0;
-  questionsAnswered.clear();
-  document.getElementById('challenge-selection').classList.add('hidden');
-  document.getElementById('badges-section').classList.add('hidden');
-  document.getElementById('challenge-area').classList.remove('hidden');
-  renderCurrentQuestion();
-}
-
-function renderCurrentQuestion(){
-  const area = document.getElementById('challenge-area');
-  const q = currentChallenge.questions[currentQuestionIndex];
-  const total = currentChallenge.questions.length;
-
-  let html = `
-    <div class="glass-effect rounded-xl p-6 animate-slide-in">
-      <div class="flex justify-between items-center mb-6">
-        <div>
-          <span class="text-emerald-400 font-semibold">${currentChallenge.title}</span>
-          <h2 class="font-orbitron text-2xl text-white">Questão ${currentQuestionIndex+1}/${total}</h2>
-        </div>
-        <div class="text-right">
-          <p class="text-slate-400 text-sm">Pontos neste desafio</p>
-          <p class="font-orbitron text-xl text-cyan-400">${challengeScore}</p>
-        </div>
-      </div>
-      <div class="w-full h-2 bg-slate-700 rounded-full mb-6"><div class="progress-bar h-full rounded-full transition-all" style="width:${(currentQuestionIndex/total)*100}%"></div></div>
-      <div class="bg-slate-800/50 rounded-lg p-6 mb-6"><p class="text-xl text-white leading-relaxed">${q.question}</p></div>`;
-
-  if (q.type === 'multiple' || q.type === 'scenario'){
-    html += `<div class="grid gap-3" id="options-container">
-      ${q.options.map((opt,i)=>`<button class="option-btn w-full text-left bg-slate-700 hover:bg-slate-600 p-4 rounded-lg transition-all border-2 border-transparent hover:border-emerald-500/50" data-index="${i}">
-        <span class="inline-block w-8 h-8 rounded-full bg-slate-600 text-center leading-8 mr-3 font-bold">${String.fromCharCode(65+i)}</span>${opt}</button>`).join('')}
-    </div>`;
-  }
-  if (q.type === 'truefalse'){
-    html += `<div class="grid grid-cols-2 gap-4" id="options-container">
-      <button class="tf-btn bg-emerald-700 hover:bg-emerald-600 p-6 rounded-lg text-xl font-bold transition-all border-2 border-transparent hover:border-emerald-400" data-value="true">✓ VERDADEIRO</button>
-      <button class="tf-btn bg-red-700 hover:bg-red-600 p-6 rounded-lg text-xl font-bold transition-all border-2 border-transparent hover:border-red-400" data-value="false">✗ FALSO</button>
-    </div>`;
-  }
-  if (q.type === 'order'){
-    const shuffled = [...q.items].sort(()=>Math.random()-0.5);
-    html += `<div class="space-y-2" id="order-container">
-      <p class="text-slate-400 mb-4">Arraste os itens para a ordem correta:</p>
-      ${shuffled.map(item=>`<div class="order-item bg-slate-700 p-4 rounded-lg cursor-move flex items-center gap-3 transition-all hover:bg-slate-600" draggable="true" data-original="${q.items.indexOf(item)}"><span class="text-slate-400">☰</span><span class="font-medium">${item}</span></div>`).join('')}
-    </div>
-    <button id="confirm-order" class="mt-6 w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 py-4 rounded-lg font-bold text-lg">CONFIRMAR ORDEM</button>`;
-  }
-  if (q.type === 'match'){
-    const shuffledRight = [...q.pairs.map(p=>p.right)].sort(()=>Math.random()-0.5);
-    html += `<div class="grid md:grid-cols-2 gap-6" id="match-container">
-      <div class="space-y-3"><p class="text-emerald-400 font-semibold mb-2">Termos</p>
-        ${q.pairs.map((p,i)=>`<div class="match-left bg-slate-700 p-4 rounded-lg cursor-pointer transition-all hover:bg-emerald-700/50 border-2 border-transparent" data-index="${i}">${p.left}</div>`).join('')}
-      </div>
-      <div class="space-y-3"><p class="text-cyan-400 font-semibold mb-2">Definições</p>
-        ${shuffledRight.map((right,i)=>`<div class="match-right bg-slate-700 p-4 rounded-lg cursor-pointer transition-all hover:bg-cyan-700/50 border-2 border-transparent" data-original="${q.pairs.findIndex(p=>p.right===right)}" data-index="${i}">${right}</div>`).join('')}
-      </div>
-    </div>
-    <button id="confirm-match" class="mt-6 w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 py-4 rounded-lg font-bold text-lg">CONFIRMAR ASSOCIAÇÕES</button>`;
-  }
-
-  html += `<button id="skip-btn" class="mt-4 text-slate-500 hover:text-slate-300 transition-all">Pular questão →</button></div>`;
-  area.innerHTML = html;
-
-  if (q.type === 'multiple' || q.type === 'scenario'){
-    document.querySelectorAll('.option-btn').forEach(btn => btn.addEventListener('click', ()=>checkAnswer(parseInt(btn.dataset.index)===q.correct, q)));
-  }
-  if (q.type === 'truefalse'){
-    document.querySelectorAll('.tf-btn').forEach(btn => btn.addEventListener('click', ()=>checkAnswer(btn.dataset.value==='true', q)));
-  }
-  if (q.type === 'order'){
-    setupDragAndDrop();
-    document.getElementById('confirm-order').addEventListener('click', ()=>{
-      const items = document.querySelectorAll('.order-item');
-      const order = Array.from(items).map(it=>parseInt(it.dataset.original));
-      checkAnswer(order.every((v,i)=>v===q.correctOrder[i]), q);
-    });
-  }
-  if (q.type === 'match'){ setupMatchGame(q); }
-
-  document.getElementById('skip-btn').addEventListener('click', ()=> showResultModal('⏭️','Questão Pulada', q.explanation, '+0 XP'));
-}
-
-function setupDragAndDrop(){
-  const container = document.getElementById('order-container');
-  let dragged=null, touchStartY=0;
-  container?.querySelectorAll('.order-item').forEach(item=>{
-    item.addEventListener('dragstart', ()=>{ dragged=item; item.classList.add('opacity-50'); });
-    item.addEventListener('dragend',   ()=>{ item.classList.remove('opacity-50'); dragged=null; });
-    item.addEventListener('dragover', e=>{ e.preventDefault(); item.classList.add('bg-emerald-700/30'); });
-    item.addEventListener('dragleave', ()=> item.classList.remove('bg-emerald-700/30'));
-    item.addEventListener('drop', e=>{
-      e.preventDefault(); item.classList.remove('bg-emerald-700/30');
-      if (dragged && dragged!==item){
-        const all=[...container.querySelectorAll('.order-item')];
-        const iD=all.indexOf(dragged), iT=all.indexOf(item);
-        if (iD<iT) item.parentNode.insertBefore(dragged, item.nextSibling);
-        else item.parentNode.insertBefore(dragged, item);
-      }
-    });
-    item.addEventListener('touchstart', e=>{ touchStartY=e.touches[0].clientY; dragged=item; item.classList.add('bg-emerald-700/50'); });
-    item.addEventListener('touchend',   e=>{
-      const diff=touchStartY-e.changedTouches[0].clientY;
-      const all=[...container.querySelectorAll('.order-item')];
-      const idx=all.indexOf(dragged);
-      if (Math.abs(diff)>30){
-        if (diff>0 && idx<all.length-1) container.insertBefore(all[idx+1], dragged);
-        else if (diff<0 && idx>0)       container.insertBefore(dragged, all[idx-1]);
-      }
-      dragged.classList.remove('bg-emerald-700/50'); dragged=null;
-    });
-  });
-}
-
-let matchSelections={left:null,right:null}, matches=[];
-function setupMatchGame(q){
-  matchSelections={left:null,right:null}; matches=[];
-  document.querySelectorAll('.match-left').forEach(item=>{
-    item.addEventListener('click', ()=>{
-      document.querySelectorAll('.match-left').forEach(i=>i.classList.remove('border-emerald-400','bg-emerald-700/50'));
-      item.classList.add('border-emerald-400','bg-emerald-700/50');
-      matchSelections.left=parseInt(item.dataset.index); tryMatch(q);
-    });
-  });
-  document.querySelectorAll('.match-right').forEach(item=>{
-    item.addEventListener('click', ()=>{
-      document.querySelectorAll('.match-right').forEach(i=>i.classList.remove('border-cyan-400','bg-cyan-700/50'));
-      item.classList.add('border-cyan-400','bg-cyan-700/50');
-      matchSelections.right=parseInt(item.dataset.original); tryMatch(q);
-    });
-  });
-  document.getElementById('confirm-match').addEventListener('click', ()=>{
-    const ok = matches.length===q.pairs.length && matches.every(m=>m.left===m.right);
-    checkAnswer(ok, q);
-  });
-}
-function tryMatch(q){
-  if (matchSelections.left!==null && matchSelections.right!==null){
-    matches.push({left:matchSelections.left,right:matchSelections.right});
-    const l=document.querySelector(`.match-left[data-index="${matchSelections.left}"]`);
-    const r=document.querySelector(`.match-right[data-original="${matchSelections.right}"]`);
-    if (matchSelections.left===matchSelections.right){
-      l.classList.add('bg-emerald-800','opacity-60'); r.classList.add('bg-emerald-800','opacity-60');
-      l.style.pointerEvents='none'; r.style.pointerEvents='none';
-    }
-    document.querySelectorAll('.match-left').forEach(i=>i.classList.remove('border-emerald-400'));
-    document.querySelectorAll('.match-right').forEach(i=>i.classList.remove('border-cyan-400'));
-    matchSelections={left:null,right:null};
-  }
-}
-
-function checkAnswer(ok, q){
-  questionsAnswered.add(currentQuestionIndex);
-  let points=0;
-  if (ok){ points=Math.floor(currentChallenge.xpReward/currentChallenge.questions.length); challengeScore+=points; }
-  showResultModal(ok?'✅':'❌', ok?'CORRETO!':'INCORRETO', q.explanation, ok?`+${points} XP`:'+0 XP');
-}
-
-function showResultModal(icon,title,msg,pts){
-  document.getElementById('result-icon').textContent=icon;
-  const t=document.getElementById('result-title');
-  t.textContent=title;
-  t.className=`font-orbitron text-2xl mb-2 ${icon==='✅'?'text-emerald-400':icon==='❌'?'text-red-400':'text-yellow-400'}`;
-  document.getElementById('result-message').textContent=msg;
-  document.getElementById('result-points').textContent=pts;
-  document.getElementById('result-modal').classList.remove('hidden');
-}
-
-async function continueAfterResult(){
-  document.getElementById('result-modal').classList.add('hidden');
-  currentQuestionIndex++;
-  if (currentQuestionIndex>=currentChallenge.questions.length) await finishChallenge(); else renderCurrentQuestion();
-}
-document.getElementById('result-continue').addEventListener('click', continueAfterResult);
-
-async function finishChallenge(){
-  const newScore=(currentPlayer.total_score||0)+challengeScore;
-  const newLevel=Math.floor(newScore/1000)+1;
-  const newCompleted=(currentPlayer.challenges_completed||0)+1;
-  let badges=(currentPlayer.badges_earned||'').split(',').filter(Boolean);
-  const add=b=>{ if(b && !badges.includes(b)) badges.push(b); };
-  add(currentChallenge.id);
-  if (newCompleted===1) add('first-challenge');
-  if (challengeScore===currentChallenge.xpReward) add('perfect-score');
-  if (newLevel>=5) add('level-5');
-  if (newCompleted>=challenges.length) add('all-challenges');
-  currentPlayer.total_score=newScore;
-  currentPlayer.current_level=newLevel;
-  currentPlayer.challenges_completed=newCompleted;
-  currentPlayer.badges_earned=badges.join(',');
-  // Salva no Supabase (módulo abaixo sobrescreve finishChallenge e faz upsert)
-  document.getElementById('challenge-area').classList.add('hidden');
-  document.getElementById('challenge-selection').classList.remove('hidden');
-  document.getElementById('badges-section').classList.remove('hidden');
-  updatePlayerDisplay();
-  renderChallengeSelection();
-}
-
-document.getElementById('leaderboard-btn').addEventListener('click', ()=>{
-  updateLeaderboard();
-  document.getElementById('leaderboard-modal').classList.remove('hidden');
-});
-document.getElementById('close-leaderboard').addEventListener('click', ()=> document.getElementById('leaderboard-modal').classList.add('hidden'));
-document.getElementById('menu-btn').addEventListener('click', ()=>{
-  document.getElementById('game-dashboard').classList.add('hidden');
-  document.getElementById('challenge-area').classList.add('hidden');
-  document.getElementById('challenge-selection').classList.remove('hidden');
-  document.getElementById('badges-section').classList.remove('hidden');
-  document.getElementById('main-menu').classList.remove('hidden');
-  currentChallenge=null; currentQuestionIndex=0;
-});
-
-(function init(){
-  setTimeout(()=>{
-    document.getElementById('loading-screen').classList.add('hidden');
-    document.getElementById('main-menu').classList.remove('hidden');
-  }, 800);
-  updateUIFromConfig();
-})();
-</script>
-
-<!-- =========================
-     BACKEND: SUPABASE
-     ========================= -->
-<script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
-  const SUPABASE_URL = "https://pqtrsgtzrmrmjbijzqvg.supabase.co";
-  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxdHJzZ3R6cm1ybWpiaWp6cXZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MTg3NTYsImV4cCI6MjA4ODM5NDc1Nn0.RXeyQrzDxofqewTJZhBpaHOnozBNYei1Lb7Log3QRww";
-  const TABLE = "players";
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
-
-  async function getPlayerByName(name){
-    const { data, error } = await supabase.from(TABLE)
-      .select("player_name,total_score,current_level,challenges_completed,badges_earned,class_group,updated_at")
-      .eq("player_name", name).maybeSingle();
-    if (error) throw error;
-    return data || null;
-  }
-  async function upsertPlayer(p){
-    const row = {
-      player_name: p.player_name,
-      total_score: p.total_score ?? 0,
-      current_level: p.current_level ?? 1,
-      challenges_completed: p.challenges_completed ?? 0,
-      badges_earned: p.badges_earned ?? "",
-      class_group: p.class_group ?? "",
-      updated_at: new Date().toISOString()
+  <script>
+    // Game Configuration
+    const defaultConfig = {
+      game_title: "HARDWARE DIAGNOSTICS",
+      welcome_message: "Bem-vindo ao desafio de diagnóstico de hardware!"
     };
-    const { error } = await supabase.from(TABLE).upsert(row, { onConflict: "player_name" });
-    if (error) throw error;
-  }
-  async function fetchLeaderboard(limit=10){
-    const { data, error } = await supabase.from(TABLE)
-      .select("player_name,total_score,current_level,challenges_completed,class_group,updated_at")
-      .order("total_score", { ascending:false })
-      .order("updated_at", { ascending:true })
-      .limit(limit);
-    if (error) throw error;
-    return data || [];
-  }
-  async function clearRankingOnServer(){
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/clear-ranking`, { method: "POST" });
-    if (!res.ok) throw new Error("Erro ao limpar ranking");
-  }
 
-  // START
-  document.getElementById('start-game-btn').addEventListener('click', async ()=>{
-    const nameInput = document.getElementById('player-name-input');
-    const classInput = document.getElementById('class-group-input');
-    const player_name = (nameInput.value || "").trim();
-    const class_group = (classInput.value || "").trim();
-    if (!player_name){
-      nameInput.classList.add('animate-shake','border-red-500');
-      setTimeout(()=> nameInput.classList.remove('animate-shake','border-red-500'),500);
-      return;
-    }
-    try{
-      const existing = await getPlayerByName(player_name);
-      if (existing){
-        window.currentPlayer = existing;
-        if (class_group && !existing.class_group){
-          window.currentPlayer.class_group = class_group;
-          await upsertPlayer(window.currentPlayer);
-        }
-      } else {
-        window.currentPlayer = { player_name, total_score:0, current_level:1, badges_earned:"", challenges_completed:0, class_group };
-        await upsertPlayer(window.currentPlayer);
+    let config = { ...defaultConfig };
+    let currentPlayer = null;
+    let allPlayers = [];
+    let currentChallenge = null;
+    let currentQuestionIndex = 0;
+    let challengeScore = 0;
+    let questionsAnswered = new Set();
+    let isInitializing = true;
+
+    // Challenge Categories with extensive content
+    const challenges = [
+      {
+        id: 'post-basics',
+        title: 'POST - Fundamentos',
+        description: 'Aprenda sobre o Power-On Self-Test',
+        icon: '🔌',
+        color: 'from-blue-600 to-blue-800',
+        difficulty: 1,
+        xpReward: 150,
+        badge: { icon: '🔌', name: 'Mestre do POST', desc: 'Completou os fundamentos do POST' },
+        questions: [
+          {
+            type: 'multiple',
+            question: 'O que significa a sigla POST?',
+            options: ['Power-On Self-Test', 'Program Operating System Test', 'Power Output Signal Test', 'Processor On Startup Test'],
+            correct: 0,
+            explanation: 'POST significa Power-On Self-Test (Auto-Teste de Inicialização). É uma rotina de diagnóstico executada pelo BIOS quando o computador é ligado.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual é a principal função do POST?',
+            options: ['Iniciar o sistema operacional', 'Verificar o funcionamento básico do hardware', 'Conectar à internet', 'Carregar drivers'],
+            correct: 1,
+            explanation: 'O POST verifica se os componentes essenciais do hardware (CPU, RAM, teclado, vídeo) estão funcionando corretamente antes de carregar o sistema operacional.'
+          },
+          {
+            type: 'multiple',
+            question: 'O POST é executado por qual componente?',
+            options: ['Sistema Operacional', 'Placa de Vídeo', 'BIOS/UEFI', 'Processador sozinho'],
+            correct: 2,
+            explanation: 'O POST é uma rotina armazenada e executada pelo BIOS (Basic Input/Output System) ou UEFI (Unified Extensible Firmware Interface).'
+          },
+          {
+            type: 'truefalse',
+            question: 'O POST é executado toda vez que o computador é ligado.',
+            correct: true,
+            explanation: 'Correto! O POST é executado automaticamente em cada inicialização para garantir que o hardware está funcionando antes de carregar o SO.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual componente é testado PRIMEIRO durante o POST?',
+            options: ['Disco rígido', 'Teclado', 'CPU e registradores', 'Monitor'],
+            correct: 2,
+            explanation: 'A CPU e seus registradores são testados primeiro, pois sem um processador funcional, nenhum outro teste pode ser executado.'
+          },
+          {
+            type: 'order',
+            question: 'Ordene a sequência CORRETA do POST (arraste para ordenar):',
+            items: ['Teste da CPU', 'Teste da memória RAM', 'Inicialização do vídeo', 'Teste dos periféricos'],
+            correctOrder: [0, 1, 2, 3],
+            explanation: 'A sequência correta é: CPU → RAM → Vídeo → Periféricos. Esta ordem garante que cada componente testado dependa dos anteriores.'
+          },
+          {
+            type: 'multiple',
+            question: 'O que acontece se o POST detectar uma falha crítica?',
+            options: ['O Windows inicia normalmente', 'O computador emite bipes de erro', 'O POST é ignorado', 'O disco é formatado'],
+            correct: 1,
+            explanation: 'Quando o POST detecta uma falha crítica, o sistema emite códigos sonoros (bipes) ou exibe códigos de erro através de LEDs para indicar o problema.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Um POST bem-sucedido geralmente emite um único bipe curto.',
+            correct: true,
+            explanation: 'Correto! Na maioria dos BIOS, um único bipe curto indica que o POST foi concluído com sucesso e o sistema pode continuar a inicialização.'
+          }
+        ]
+      },
+      {
+        id: 'beep-codes',
+        title: 'Códigos Sonoros',
+        description: 'Interprete os bipes de erro do BIOS',
+        icon: '🔊',
+        color: 'from-purple-600 to-purple-800',
+        difficulty: 2,
+        xpReward: 200,
+        badge: { icon: '🔊', name: 'Intérprete de Bipes', desc: 'Dominou os códigos sonoros do BIOS' },
+        questions: [
+          {
+            type: 'multiple',
+            question: 'Por que o BIOS usa códigos sonoros para indicar erros?',
+            options: ['Porque é mais moderno', 'Porque a placa de vídeo pode estar com defeito', 'Porque economiza energia', 'Porque é mais bonito'],
+            correct: 1,
+            explanation: 'Os códigos sonoros são usados porque, em caso de falha de vídeo, não seria possível exibir mensagens na tela. Os bipes permitem diagnóstico mesmo sem vídeo.'
+          },
+          {
+            type: 'multiple',
+            question: 'No BIOS AMI, o que significa 1 bipe longo + 3 bipes curtos?',
+            options: ['Erro de teclado', 'Erro de memória RAM', 'Erro de placa de vídeo', 'POST bem-sucedido'],
+            correct: 2,
+            explanation: 'No BIOS AMI, 1 bipe longo seguido de 3 curtos indica erro na placa de vídeo. Este é um dos códigos mais comuns para problemas gráficos.'
+          },
+          {
+            type: 'multiple',
+            question: 'O que geralmente indica bipes contínuos sem parar?',
+            options: ['Tudo funcionando', 'Erro de memória RAM', 'Erro de teclado', 'Disco cheio'],
+            correct: 1,
+            explanation: 'Bipes contínuos geralmente indicam problema grave com a memória RAM, como módulos mal encaixados, incompatíveis ou defeituosos.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Todos os fabricantes de BIOS usam os mesmos códigos sonoros.',
+            correct: false,
+            explanation: 'Falso! Cada fabricante (AMI, Award, Phoenix, etc.) tem seus próprios códigos sonoros. É importante consultar a documentação específica.'
+          },
+          {
+            type: 'match',
+            question: 'Associe os códigos sonoros AMI com seus significados:',
+            pairs: [
+              { left: '1 bipe curto', right: 'POST OK' },
+              { left: '3 bipes curtos', right: 'Erro de RAM' },
+              { left: '5 bipes curtos', right: 'Erro de CPU' },
+              { left: '1 longo + 2 curtos', right: 'Erro de vídeo' }
+            ],
+            explanation: 'Conhecer estes códigos é essencial para diagnóstico rápido sem ferramentas adicionais.'
+          },
+          {
+            type: 'multiple',
+            question: 'Se não há nenhum bipe durante o POST, qual é a causa mais provável?',
+            options: ['O computador está mudo', 'Speaker do sistema desconectado ou defeituoso', 'POST desativado', 'Windows está carregando'],
+            correct: 1,
+            explanation: 'A ausência de bipes pode indicar que o speaker interno está desconectado, defeituoso, ou que há uma falha tão grave que o sistema não consegue nem emitir sons.'
+          },
+          {
+            type: 'multiple',
+            question: 'No BIOS Phoenix, como são organizados os códigos sonoros?',
+            options: ['Apenas bipes longos', 'Sequências de 3 grupos separados por pausas', 'Um bipe por componente', 'Apenas silêncio'],
+            correct: 1,
+            explanation: 'O Phoenix BIOS usa sequências como 1-3-1 (1 bipe, pausa, 3 bipes, pausa, 1 bipe), facilitando a identificação de diferentes tipos de erro.'
+          },
+          {
+            type: 'truefalse',
+            question: 'É possível desativar completamente os bipes do POST no BIOS.',
+            correct: true,
+            explanation: 'Verdadeiro! A maioria dos BIOS permite desativar os sons do POST nas configurações. Porém, isso não é recomendado para diagnóstico.'
+          }
+        ]
+      },
+      {
+        id: 'led-diagnostics',
+        title: 'LEDs de Diagnóstico',
+        description: 'Entenda os indicadores luminosos',
+        icon: '💡',
+        color: 'from-yellow-600 to-orange-600',
+        difficulty: 2,
+        xpReward: 180,
+        badge: { icon: '💡', name: 'Especialista em LEDs', desc: 'Dominou diagnóstico por LEDs' },
+        questions: [
+          {
+            type: 'multiple',
+            question: 'Qual a vantagem dos LEDs de diagnóstico sobre os códigos sonoros?',
+            options: ['São mais baratos', 'Permitem identificação visual mesmo em ambientes barulhentos', 'Consomem menos energia', 'São mais bonitos'],
+            correct: 1,
+            explanation: 'LEDs de diagnóstico oferecem feedback visual permanente, útil em data centers barulhentos ou quando o speaker está defeituoso.'
+          },
+          {
+            type: 'multiple',
+            question: 'Em placas-mãe modernas, qual LED geralmente indica falha de CPU?',
+            options: ['Verde', 'Amarelo', 'Vermelho', 'Azul'],
+            correct: 2,
+            explanation: 'O LED vermelho é universalmente associado a erros críticos. Em muitas placas, um LED vermelho próximo ao socket indica problema com a CPU.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Placas-mãe gamer frequentemente possuem displays de código de erro de 2 dígitos.',
+            correct: true,
+            explanation: 'Correto! Muitas placas-mãe entusiastas possuem displays LED de 2 dígitos (Debug LED) que mostram códigos hexadecimais para diagnóstico detalhado.'
+          },
+          {
+            type: 'multiple',
+            question: 'O que significa quando TODOS os LEDs de diagnóstico estão apagados?',
+            options: ['Tudo funcionando perfeitamente', 'Fonte de alimentação com problema', 'Disco rígido cheio', 'Windows corrompido'],
+            correct: 1,
+            explanation: 'Se todos os LEDs estão apagados, provavelmente a placa-mãe não está recebendo energia. Verifique a fonte, cabos e o botão da fonte.'
+          },
+          {
+            type: 'multiple',
+            question: 'O LED "DRAM" aceso durante o boot indica:',
+            options: ['RAM funcionando perfeitamente', 'Problema detectado na memória RAM', 'Disco sendo acessado', 'Rede conectada'],
+            correct: 1,
+            explanation: 'O LED DRAM aceso (ou piscando) durante o boot indica que o POST detectou um problema com a memória RAM.'
+          },
+          {
+            type: 'order',
+            question: 'Ordene os LEDs de diagnóstico na sequência típica de teste:',
+            items: ['CPU', 'DRAM', 'VGA', 'BOOT'],
+            correctOrder: [0, 1, 2, 3],
+            explanation: 'A sequência típica é CPU → DRAM → VGA → BOOT, seguindo a ordem do POST. Cada LED acende durante o teste do respectivo componente.'
+          },
+          {
+            type: 'multiple',
+            question: 'O que fazer se o LED de VGA ficar permanentemente aceso?',
+            options: ['Reiniciar o Windows', 'Verificar a placa de vídeo e suas conexões', 'Trocar o teclado', 'Formatar o disco'],
+            correct: 1,
+            explanation: 'LED VGA permanente indica problema com a placa de vídeo. Verifique se está bem encaixada, se os cabos de energia estão conectados e teste em outro slot.'
+          },
+          {
+            type: 'truefalse',
+            question: 'O LED de atividade do HD pisca quando há leitura ou escrita no disco.',
+            correct: true,
+            explanation: 'Correto! O LED do HD (geralmente no gabinete) indica atividade do disco. Piscando = funcionando. Sempre aceso = possível travamento.'
+          }
+        ]
+      },
+      {
+        id: 'common-failures',
+        title: 'Falhas Comuns',
+        description: 'Diagnostique problemas frequentes',
+        icon: '🔧',
+        color: 'from-red-600 to-red-800',
+        difficulty: 3,
+        xpReward: 250,
+        badge: { icon: '🔧', name: 'Detetive de Hardware', desc: 'Especialista em falhas comuns' },
+        questions: [
+          {
+            type: 'scenario',
+            question: 'CENÁRIO: O computador liga mas a tela fica preta e há 3 bipes curtos. Qual é o diagnóstico mais provável?',
+            options: ['Disco rígido com defeito', 'Memória RAM com problema', 'Fonte de alimentação fraca', 'Cabo de vídeo desconectado'],
+            correct: 1,
+            explanation: 'Três bipes curtos no BIOS AMI indicam erro de memória RAM. Tente reencaixar os módulos ou testá-los individualmente.'
+          },
+          {
+            type: 'scenario',
+            question: 'CENÁRIO: O PC não liga de jeito nenhum - nenhum LED acende, nenhum ventilador gira. O que verificar primeiro?',
+            options: ['Driver de vídeo', 'Fonte de alimentação e cabos de energia', 'Sistema operacional', 'Antivírus'],
+            correct: 1,
+            explanation: 'Se nada liga, o problema é falta de energia. Verifique: tomada, cabo de força, botão da fonte (I/O), conexões ATX na placa-mãe.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual ferramenta é usada para testar uma fonte de alimentação sem conectá-la à placa-mãe?',
+            options: ['Multímetro', 'Testador de fonte ATX', 'Osciloscópio', 'Todas as anteriores'],
+            correct: 3,
+            explanation: 'Todas podem ser usadas! O testador ATX é mais prático, o multímetro permite medições precisas, e o osciloscópio analisa a qualidade da energia.'
+          },
+          {
+            type: 'scenario',
+            question: 'CENÁRIO: O computador reinicia sozinho durante jogos ou tarefas pesadas. Causa mais provável?',
+            options: ['Vírus de computador', 'Superaquecimento ou fonte subdimensionada', 'Disco rígido cheio', 'Windows desatualizado'],
+            correct: 1,
+            explanation: 'Reinícios sob carga indicam superaquecimento (CPU/GPU desligando por proteção) ou fonte que não consegue fornecer energia suficiente.'
+          },
+          {
+            type: 'multiple',
+            question: 'O que é a "Tela Azul da Morte" (BSOD) e o que pode causar?',
+            options: ['Erro de software apenas', 'Erro crítico que pode ser hardware ou software', 'Problema de monitor', 'Atualização do Windows'],
+            correct: 1,
+            explanation: 'A BSOD indica erro crítico do sistema. Pode ser causada por drivers corrompidos, RAM defeituosa, superaquecimento, ou problemas de disco.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Capacitores estufados na placa-mãe são sinal de defeito grave.',
+            correct: true,
+            explanation: 'Verdadeiro! Capacitores estufados, vazando ou com topo abaulado indicam falha iminente. A placa pode apresentar instabilidade ou parar de funcionar.'
+          },
+          {
+            type: 'scenario',
+            question: 'CENÁRIO: O computador liga, passa no POST, mas fica em loop de reinicialização antes de carregar o Windows.',
+            options: ['Problema de RAM', 'Corrupção do setor de boot ou falha no disco', 'Monitor com defeito', 'Teclado desconectado'],
+            correct: 1,
+            explanation: 'Loop de reinício após POST geralmente indica problema no sistema de boot: MBR corrompido, disco com setores defeituosos, ou SO danificado.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual é o procedimento correto para diagnosticar falha intermitente de RAM?',
+            options: ['Trocar o processador', 'Usar software de diagnóstico como MemTest86', 'Formatar o disco', 'Reinstalar drivers'],
+            correct: 1,
+            explanation: 'MemTest86 ou Windows Memory Diagnostic testam a RAM exaustivamente, identificando erros que podem causar travamentos e BSOD intermitentes.'
+          }
+        ]
+      },
+      {
+        id: 'usb-testing',
+        title: 'Testador de USB',
+        description: 'Aprenda sobre teste de portas USB',
+        icon: '🔌',
+        color: 'from-green-600 to-teal-600',
+        difficulty: 2,
+        xpReward: 170,
+        badge: { icon: '🔌', name: 'Expert USB', desc: 'Especialista em diagnóstico USB' },
+        questions: [
+          {
+            type: 'multiple',
+            question: 'O que um testador de USB pode medir?',
+            options: ['Apenas velocidade', 'Tensão, corrente e potência', 'Apenas se está funcionando', 'Temperatura da porta'],
+            correct: 1,
+            explanation: 'Testadores USB medem tensão (V), corrente (A) e potência (W), permitindo verificar se a porta fornece energia adequada para dispositivos.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual é a tensão padrão de uma porta USB?',
+            options: ['3.3V', '5V', '12V', '9V'],
+            correct: 1,
+            explanation: 'O padrão USB fornece 5V de tensão. Portas defeituosas podem fornecer tensão instável ou abaixo do especificado.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Portas USB 3.0 podem fornecer mais corrente que USB 2.0.',
+            correct: true,
+            explanation: 'Verdadeiro! USB 2.0 fornece até 500mA, enquanto USB 3.0 pode fornecer até 900mA, e USB Power Delivery muito mais.'
+          },
+          {
+            type: 'multiple',
+            question: 'Se um dispositivo USB não é reconhecido, qual é o primeiro passo de diagnóstico?',
+            options: ['Formatar o dispositivo', 'Testar em outra porta USB', 'Reinstalar o Windows', 'Comprar outro dispositivo'],
+            correct: 1,
+            explanation: 'Testar em outra porta isola se o problema é na porta, no dispositivo ou no cabo. É o diagnóstico mais básico e eficaz.'
+          },
+          {
+            type: 'multiple',
+            question: 'O que pode indicar uma porta USB que fornece apenas 4.2V em vez de 5V?',
+            options: ['Funcionamento normal', 'Porta ou controlador com defeito', 'Dispositivo muito potente', 'Windows desatualizado'],
+            correct: 1,
+            explanation: 'Tensão significativamente abaixo de 5V indica problema no controlador USB, trilha da placa-mãe ou fonte de alimentação.'
+          },
+          {
+            type: 'scenario',
+            question: 'CENÁRIO: O celular carrega muito lentamente quando conectado ao PC. O que verificar?',
+            options: ['A bateria do celular', 'A corrente fornecida pela porta USB', 'O sistema operacional do PC', 'A memória RAM'],
+            correct: 1,
+            explanation: 'Carregamento lento indica que a porta não fornece corrente suficiente. Use um testador USB para verificar a amperagem disponível.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Portas USB frontais do gabinete podem ter problemas se os cabos internos estiverem mal conectados.',
+            correct: true,
+            explanation: 'Correto! As portas frontais dependem de cabos conectados à placa-mãe. Conexões frouxas causam mau funcionamento ou falta de energia.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual geração de USB introduziu o conector reversível Type-C?',
+            options: ['USB 1.0', 'USB 2.0', 'USB 3.1', 'USB 4.0'],
+            correct: 2,
+            explanation: 'O conector USB Type-C foi introduzido com o USB 3.1, oferecendo conexão reversível e suporte a maiores taxas de transferência e potência.'
+          }
+        ]
+      },
+      {
+        id: 'esd-safety',
+        title: 'Segurança ESD',
+        description: 'Proteção contra descarga eletrostática',
+        icon: '⚡',
+        color: 'from-amber-600 to-yellow-600',
+        difficulty: 1,
+        xpReward: 130,
+        badge: { icon: '⚡', name: 'Guardião ESD', desc: 'Mestre em proteção eletrostática' },
+        questions: [
+          {
+            type: 'multiple',
+            question: 'O que significa ESD?',
+            options: ['Electronic System Damage', 'Electrostatic Discharge', 'Electrical Safety Device', 'External Storage Drive'],
+            correct: 1,
+            explanation: 'ESD = Electrostatic Discharge (Descarga Eletrostática). É a liberação repentina de eletricidade estática que pode danificar componentes eletrônicos.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual componente é mais sensível a danos por ESD?',
+            options: ['Gabinete', 'Memória RAM e processador', 'Cabos de força', 'Parafusos'],
+            correct: 1,
+            explanation: 'Chips e circuitos integrados como RAM, CPU e placas são extremamente sensíveis. Uma descarga imperceptível pode danificá-los permanentemente.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Você pode sentir descargas ESD a partir de 3.000 volts, mas componentes podem ser danificados com apenas 30 volts.',
+            correct: true,
+            explanation: 'Verdadeiro! Humanos só percebem descargas acima de ~3.000V, mas componentes eletrônicos podem ser destruídos com tensões muito menores.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual é a forma CORRETA de se aterrar antes de manusear componentes?',
+            options: ['Tocar em madeira', 'Usar pulseira antiestática conectada ao gabinete aterrado', 'Lavar as mãos', 'Usar luvas de borracha'],
+            correct: 1,
+            explanation: 'A pulseira antiestática, conectada a um ponto aterrado, dissipa continuamente qualquer carga estática acumulada no corpo.'
+          },
+          {
+            type: 'multiple',
+            question: 'Onde NUNCA se deve apoiar componentes eletrônicos?',
+            options: ['Embalagem antiestática', 'Superfície metálica aterrada', 'Carpete ou superfícies sintéticas', 'Bancada de madeira'],
+            correct: 2,
+            explanation: 'Carpetes e materiais sintéticos geram e acumulam eletricidade estática. Componentes devem ficar em embalagens antiestáticas ou superfícies dissipativas.'
+          },
+          {
+            type: 'truefalse',
+            question: 'A umidade do ar afeta a geração de eletricidade estática.',
+            correct: true,
+            explanation: 'Verdadeiro! Ar seco aumenta a geração de estática. Ambientes com umidade controlada (40-60%) reduzem riscos de ESD.'
+          },
+          {
+            type: 'multiple',
+            question: 'Por que as embalagens de componentes são geralmente cinza ou rosa?',
+            options: ['Estética apenas', 'São materiais antiestáticos ou dissipativos', 'São mais baratas', 'Identificação do fabricante'],
+            correct: 1,
+            explanation: 'Embalagens cinza (condutivas) e rosa (dissipativas) protegem componentes de ESD. Nunca descarte um componente em saco plástico comum!'
+          },
+          {
+            type: 'order',
+            question: 'Ordene os passos corretos antes de abrir um computador:',
+            items: ['Desligar e desconectar da tomada', 'Pressionar botão power para descarregar capacitores', 'Colocar pulseira antiestática', 'Abrir o gabinete'],
+            correctOrder: [0, 1, 2, 3],
+            explanation: 'Esta sequência garante segurança pessoal e proteção dos componentes contra ESD.'
+          }
+        ]
+      },
+      {
+        id: 'diagnostic-tools',
+        title: 'Ferramentas de Diagnóstico',
+        description: 'Conheça as ferramentas profissionais',
+        icon: '🛠️',
+        color: 'from-indigo-600 to-purple-600',
+        difficulty: 3,
+        xpReward: 220,
+        badge: { icon: '🛠️', name: 'Técnico Equipado', desc: 'Conhece todas as ferramentas' },
+        questions: [
+          {
+            type: 'multiple',
+            question: 'Qual ferramenta mede tensão, corrente e resistência?',
+            options: ['Alicate', 'Multímetro', 'Chave de fenda', 'Pinça'],
+            correct: 1,
+            explanation: 'O multímetro é essencial para técnicos. Permite verificar se fontes, cabos e componentes estão fornecendo energia corretamente.'
+          },
+          {
+            type: 'multiple',
+            question: 'Para que serve uma placa de diagnóstico POST?',
+            options: ['Aumentar a velocidade do PC', 'Exibir códigos de erro durante o boot', 'Melhorar gráficos', 'Adicionar mais RAM'],
+            correct: 1,
+            explanation: 'Placas POST Card são inseridas em slots PCI/PCIe e exibem códigos hexadecimais que identificam onde o boot está falhando.'
+          },
+          {
+            type: 'truefalse',
+            question: 'Um testador de cabos pode verificar se um cabo de rede está com fios rompidos.',
+            correct: true,
+            explanation: 'Correto! Testadores de cabo verificam continuidade, identificam fios cruzados, rompidos ou em curto-circuito.'
+          },
+          {
+            type: 'match',
+            question: 'Associe a ferramenta com sua função:',
+            pairs: [
+              { left: 'Multímetro', right: 'Medir tensão e corrente' },
+              { left: 'POST Card', right: 'Códigos de erro de boot' },
+              { left: 'Testador de fonte', right: 'Verificar PSU ATX' },
+              { left: 'Soprador de ar', right: 'Limpeza de poeira' }
+            ],
+            explanation: 'Cada ferramenta tem função específica no diagnóstico profissional de hardware.'
+          },
+          {
+            type: 'multiple',
+            question: 'Qual software é considerado padrão para teste de memória RAM?',
+            options: ['CCleaner', 'MemTest86', 'WinRAR', 'Photoshop'],
+            correct: 1,
+            explanation: 'MemTest86 é a ferramenta padrão da indústria para teste exaustivo de memória RAM, detectando erros que causam instabilidade.'
+          },
+          {
+            type: 'multiple',
+            question: 'CrystalDiskInfo é usado para:',
+            options: ['Testar memória RAM', 'Verificar saúde de discos HD/SSD via S.M.A.R.T.', 'Configurar BIOS', 'Editar fotos'],
+            correct: 1,
+            explanation: 'CrystalDiskInfo lê dados S.M.A.R.T. dos discos, mostrando temperatura, erros e previsão de falhas.'
+          },
+          {
+            type: 'scenario',
+            question: 'CENÁRIO: Você precisa identificar por que um PC não passa do POST, mas não há bipes. Qual ferramenta usar?',
+            options: ['Antivírus', 'POST Card de diagnóstico', 'Desfragmentador', 'Editor de texto'],
+            correct: 1,
+            explanation: 'A POST Card mostrará em qual etapa do boot o sistema está parando, mesmo sem áudio ou vídeo funcionando.'
+          },
+          {
+            type: 'truefalse',
+            question: 'O HWiNFO pode monitorar temperaturas e voltagens em tempo real.',
+            correct: true,
+            explanation: 'Verdadeiro! HWiNFO é uma ferramenta completa que monitora sensores de temperatura, voltagem, velocidade de coolers e muito mais.'
+          }
+        ]
+      },
+      {
+        id: 'practical-diagnosis',
+        title: 'Diagnóstico Prático',
+        description: 'Simulações de casos reais',
+        icon: '🎯',
+        color: 'from-pink-600 to-rose-600',
+        difficulty: 3,
+        xpReward: 280,
+        badge: { icon: '🎯', name: 'Diagnosta Mestre', desc: 'Resolveu casos complexos' },
+        questions: [
+          {
+            type: 'scenario',
+            question: 'CASO 1: Cliente relata que o PC desliga sozinho após ~15 minutos de uso. Ao abrir, você nota muita poeira. Diagnóstico?',
+            options: ['Vírus', 'Superaquecimento por obstrução de ventilação', 'Disco cheio', 'RAM insuficiente'],
+            correct: 1,
+            explanation: 'Poeira bloqueia a dissipação de calor. O processador aquece e o sistema desliga por proteção térmica. Limpeza resolverá.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 2: Novo módulo de RAM instalado, PC não liga mais (nenhum bipe, nenhum LED). O que aconteceu provavelmente?',
+            options: ['RAM incompatível causando falha no POST', 'Windows corrompido', 'Monitor com defeito', 'Teclado incompatível'],
+            correct: 0,
+            explanation: 'RAM incompatível (velocidade, tipo ou voltagem) pode impedir completamente o boot. Remova o novo módulo e teste.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 3: Computador apresenta BSOD aleatória com diferentes códigos de erro. O que testar primeiro?',
+            options: ['Trocar o monitor', 'Executar MemTest86 para verificar RAM', 'Atualizar navegador', 'Mudar papel de parede'],
+            correct: 1,
+            explanation: 'BSODs aleatórias com códigos variados são sintoma clássico de RAM defeituosa. MemTest86 identificará o módulo problemático.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 4: O cliente diz que as portas USB frontais não funcionam, mas as traseiras sim. Causa provável?',
+            options: ['Driver USB corrompido', 'Cabo interno do painel frontal desconectado', 'Fonte fraca', 'Processador com defeito'],
+            correct: 1,
+            explanation: 'Portas frontais dependem de cabos conectados à placa-mãe. Se apenas as frontais falham, o cabo interno está desconectado ou defeituoso.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 5: PC emite 1 bipe longo repetido continuamente. O que indica e qual a ação?',
+            options: ['Tudo OK, apenas aguardar', 'Erro de RAM - reencaixar ou substituir módulos', 'Disco cheio - limpar arquivos', 'Monitor desconectado'],
+            correct: 1,
+            explanation: 'Bipes longos contínuos indicam falha de memória. Desligue, remova e reencaixe os módulos de RAM. Teste um de cada vez.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 6: Computador liga, ventoinhas giram, mas não há vídeo e nenhum bipe. LED vermelho aceso próximo ao slot de RAM.',
+            options: ['Problema na placa de vídeo', 'Memória RAM não detectada ou com defeito', 'HD corrompido', 'Cabo HDMI ruim'],
+            correct: 1,
+            explanation: 'O LED vermelho na área de RAM indica que o POST falhou ao testar a memória. Reencaixe ou teste cada módulo separadamente.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 7: Ao usar multímetro na fonte, você mede 4.5V no fio amarelo (deveria ser 12V). Conclusão?',
+            options: ['Leitura normal', 'Fonte de alimentação defeituosa ou subdimensionada', 'Multímetro descalibrado', 'Placa-mãe com curto'],
+            correct: 1,
+            explanation: 'O fio amarelo deve fornecer 12V (±5%). Uma leitura de 4.5V indica fonte defeituosa que não consegue manter a tensão correta.'
+          },
+          {
+            type: 'scenario',
+            question: 'CASO 8: Cliente adicionou uma placa de vídeo potente e agora o PC reinicia em jogos. POST e Windows funcionam normalmente.',
+            options: ['Placa de vídeo defeituosa', 'Fonte de alimentação não suporta a demanda da GPU', 'Jogo pirata', 'SSD cheio'],
+            correct: 1,
+            explanation: 'GPUs potentes exigem muita energia. Se a fonte não tem potência suficiente, o sistema reinicia sob carga. Calcule a demanda e troque a PSU.'
+          }
+        ]
       }
-      showGameDashboard();
-    } catch(e){
-      console.error(e);
-      alert("Não foi possível iniciar agora. Tente novamente.");
+    ];
+
+    // Badges available
+    const allBadges = [
+      { id: 'first-challenge', icon: '🌟', name: 'Primeira Missão', desc: 'Completou seu primeiro desafio' },
+      { id: 'perfect-score', icon: '💯', name: 'Perfeição', desc: 'Acertou todas as questões de um desafio' },
+      { id: 'speed-demon', icon: '⚡', name: 'Velocista', desc: 'Completou um desafio em menos de 2 minutos' },
+      { id: 'level-5', icon: '🎖️', name: 'Técnico Sênior', desc: 'Alcançou o nível 5' },
+      { id: 'all-challenges', icon: '👑', name: 'Mestre Supremo', desc: 'Completou todos os desafios' },
+      ...challenges.map(c => ({ id: c.id, ...c.badge }))
+    ];
+
+    // Initialize SDKs
+    async function initializeApp() {
+      try {
+        // Initialize Element SDK
+        if (window.elementSdk) {
+          window.elementSdk.init({
+            defaultConfig,
+            onConfigChange: async (newConfig) => {
+              config = { ...config, ...newConfig };
+              updateUIFromConfig();
+            },
+            mapToCapabilities: (cfg) => ({
+              recolorables: [],
+              borderables: [],
+              fontEditable: undefined,
+              fontSizeable: undefined
+            }),
+            mapToEditPanelValues: (cfg) => new Map([
+              ["game_title", cfg.game_title || defaultConfig.game_title],
+              ["welcome_message", cfg.welcome_message || defaultConfig.welcome_message]
+            ])
+          });
+        }
+
+        // Initialize Data SDK for cloud persistence
+        if (window.dataSdk) {
+          const dataHandler = {
+            onDataChanged(data) {
+              allPlayers = data || [];
+            }
+          };
+
+          const initResult = await window.dataSdk.init(dataHandler);
+          if (!initResult.isOk) {
+            console.error("Data SDK init failed, will use localStorage fallback");
+            loadPlayersFromLocalStorage();
+          }
+        } else {
+          // Fallback to localStorage if Data SDK not available
+          loadPlayersFromLocalStorage();
+        }
+
+        isInitializing = false;
+
+        // Show main menu after initialization
+        setTimeout(() => {
+          document.getElementById('loading-screen').classList.add('hidden');
+          document.getElementById('main-menu').classList.remove('hidden');
+        }, 1500);
+
+      } catch (error) {
+        console.error("Initialization error:", error);
+        loadPlayersFromLocalStorage();
+        isInitializing = false;
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('access-code-screen').classList.remove('hidden');
+      }
     }
-  }, { capture:true });
 
-  // FINISH (persistir após calcular no frontend)
-  const originalFinish = window.finishChallenge;
-  window.finishChallenge = async function(){
-    await originalFinish();
-    try{ await upsertPlayer(window.currentPlayer); } catch(e){ console.warn("Falha ao salvar:", e); }
-  };
+    function loadPlayersFromLocalStorage() {
+      const stored = localStorage.getItem('hardwareQuestPlayers');
+      if (stored) {
+        try {
+          allPlayers = JSON.parse(stored);
+        } catch (e) {
+          allPlayers = [];
+        }
+      }
+    }
 
-  // RANKING
-  window.updateLeaderboard = async function(){
-    const list = document.getElementById('leaderboard-list');
-    try{
-      const rows = await fetchLeaderboard(10);
-      if (!rows.length){
+    function savePlayersToLocalStorage() {
+      localStorage.setItem('hardwareQuestPlayers', JSON.stringify(allPlayers));
+    }
+
+    async function savePlayerToCloud(player) {
+      if (!window.dataSdk || isInitializing) {
+        savePlayersToLocalStorage();
+        return;
+      }
+
+      try {
+        const existingPlayer = allPlayers.find(p => p.player_name === player.player_name);
+        
+        if (existingPlayer && existingPlayer.__backendId) {
+          // Update existing player
+          const updateResult = await window.dataSdk.update(player);
+          if (updateResult.isError) {
+            console.error("Failed to update player:", updateResult.error);
+            savePlayersToLocalStorage();
+          }
+        } else {
+          // Create new player
+          const { __backendId, ...playerData } = player;
+          const createResult = await window.dataSdk.create(playerData);
+          if (createResult.isError) {
+            console.error("Failed to create player:", createResult.error);
+            savePlayersToLocalStorage();
+          }
+        }
+      } catch (error) {
+        console.error("Error saving to cloud:", error);
+        savePlayersToLocalStorage();
+      }
+    }
+
+    async function loadPlayersFromCloud() {
+      if (!window.dataSdk || isInitializing) {
+        loadPlayersFromLocalStorage();
+        return;
+      }
+
+      try {
+        // Data SDK loads players automatically via onDataChanged
+        // Just ensure allPlayers is updated
+        if (!allPlayers || allPlayers.length === 0) {
+          loadPlayersFromLocalStorage();
+        }
+      } catch (error) {
+        console.error("Error loading from cloud:", error);
+        loadPlayersFromLocalStorage();
+      }
+    }
+
+    function updateUIFromConfig() {
+      const titleEl = document.getElementById('game-title');
+      const welcomeEl = document.getElementById('welcome-text');
+      
+      if (titleEl) titleEl.textContent = config.game_title || defaultConfig.game_title;
+      if (welcomeEl) welcomeEl.textContent = config.welcome_message || defaultConfig.welcome_message;
+    }
+
+    // Event Listeners
+    document.getElementById('start-game-btn').addEventListener('click', startGame);
+    document.getElementById('leaderboard-btn').addEventListener('click', showLeaderboard);
+    document.getElementById('close-leaderboard').addEventListener('click', hideLeaderboard);
+    document.getElementById('clear-ranking-btn').addEventListener('click', clearRanking);
+    document.getElementById('menu-btn').addEventListener('click', returnToMenu);
+    document.getElementById('result-continue').addEventListener('click', continueAfterResult);
+    document.getElementById('badge-continue').addEventListener('click', closeBadgeModal);
+
+    async function startGame() {
+      const nameInput = document.getElementById('player-name-input');
+      const playerName = nameInput.value.trim();
+      
+      if (!playerName) {
+        nameInput.classList.add('animate-shake', 'border-red-500');
+        setTimeout(() => {
+          nameInput.classList.remove('animate-shake', 'border-red-500');
+        }, 500);
+        return;
+      }
+
+      // Check if player exists
+      const existingPlayer = allPlayers.find(p => p.player_name.toLowerCase() === playerName.toLowerCase());
+      
+      if (existingPlayer) {
+        currentPlayer = existingPlayer;
+      } else {
+        // Create new player
+        const newPlayer = {
+          player_name: playerName,
+          total_score: 0,
+          current_level: 1,
+          badges_earned: '',
+          challenges_completed: 0,
+          created_at: new Date().toISOString()
+        };
+
+        // Save to cloud (or localStorage as fallback)
+        await savePlayerToCloud(newPlayer);
+        
+        // Update local array
+        const playerIndex = allPlayers.findIndex(p => p.player_name === playerName);
+        if (playerIndex >= 0) {
+          currentPlayer = allPlayers[playerIndex];
+        } else {
+          allPlayers.push(newPlayer);
+          currentPlayer = newPlayer;
+          savePlayersToLocalStorage();
+        }
+      }
+
+      showGameDashboard();
+    }
+
+    function showGameDashboard() {
+      document.getElementById('main-menu').classList.add('hidden');
+      document.getElementById('game-dashboard').classList.remove('hidden');
+      
+      updatePlayerDisplay();
+      renderChallengeSelection();
+    }
+
+    function updatePlayerDisplay() {
+      if (!currentPlayer) return;
+
+      // Update from allPlayers if available
+      const updatedPlayer = allPlayers.find(p => p.player_name === currentPlayer.player_name);
+      if (updatedPlayer) {
+        currentPlayer = updatedPlayer;
+      }
+
+      document.getElementById('player-avatar').textContent = currentPlayer.player_name.charAt(0).toUpperCase();
+      document.getElementById('player-display-name').textContent = currentPlayer.player_name;
+      document.getElementById('score-display').textContent = currentPlayer.total_score || 0;
+      document.getElementById('level-display').textContent = currentPlayer.current_level || 1;
+      document.getElementById('challenges-display').textContent = currentPlayer.challenges_completed || 0;
+      
+      const xpForLevel = (currentPlayer.total_score || 0) % 1000;
+      document.getElementById('xp-display').textContent = `${xpForLevel}/1000 XP`;
+      document.getElementById('xp-bar').style.width = `${(xpForLevel / 1000) * 100}%`;
+
+      renderBadges();
+    }
+
+    function renderBadges() {
+      const container = document.getElementById('badges-container');
+      const earnedBadges = (currentPlayer.badges_earned || '').split(',').filter(b => b);
+      
+      if (earnedBadges.length === 0) {
+        container.innerHTML = '<span class="text-slate-500 text-sm">Complete desafios para ganhar badges!</span>';
+        return;
+      }
+
+      container.innerHTML = earnedBadges.map(badgeId => {
+        const badge = allBadges.find(b => b.id === badgeId);
+        if (!badge) return '';
+        return `
+          <div class="badge-earned bg-slate-700 px-3 py-2 rounded-lg flex items-center gap-2" title="${badge.desc}">
+            <span class="text-2xl">${badge.icon}</span>
+            <span class="text-sm text-slate-300">${badge.name}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderChallengeSelection() {
+      const container = document.getElementById('challenge-selection');
+      container.innerHTML = '';
+      
+      const completedChallenges = (currentPlayer.badges_earned || '').split(',');
+
+      challenges.forEach((challenge, index) => {
+        const isCompleted = completedChallenges.includes(challenge.id);
+        const difficultyStars = '⭐'.repeat(challenge.difficulty);
+        
+        const card = document.createElement('div');
+        card.className = `card-hover glass-effect rounded-xl p-6 cursor-pointer ${isCompleted ? 'opacity-75' : ''}`;
+        card.style.animationDelay = `${index * 0.1}s`;
+        card.classList.add('animate-slide-in');
+        
+        card.innerHTML = `
+          <div class="flex items-start justify-between mb-4">
+            <div class="w-16 h-16 rounded-xl bg-gradient-to-br ${challenge.color} flex items-center justify-center text-3xl">
+              ${challenge.icon}
+            </div>
+            ${isCompleted ? '<span class="text-emerald-400 text-2xl">✓</span>' : ''}
+          </div>
+          <h3 class="font-orbitron text-xl text-white mb-2">${challenge.title}</h3>
+          <p class="text-slate-400 text-sm mb-4">${challenge.description}</p>
+          <div class="flex justify-between items-center">
+            <span class="text-sm">${difficultyStars}</span>
+            <span class="text-emerald-400 font-bold">+${challenge.xpReward} XP</span>
+          </div>
+          <div class="mt-3 text-xs text-slate-500">${challenge.questions.length} questões</div>
+        `;
+
+        card.addEventListener('click', () => startChallenge(challenge));
+        container.appendChild(card);
+      });
+    }
+
+    function startChallenge(challenge) {
+      currentChallenge = challenge;
+      currentQuestionIndex = 0;
+      challengeScore = 0;
+      questionsAnswered.clear();
+
+      document.getElementById('challenge-selection').classList.add('hidden');
+      document.getElementById('badges-section').classList.add('hidden');
+      document.getElementById('challenge-area').classList.remove('hidden');
+
+      renderCurrentQuestion();
+    }
+
+    function renderCurrentQuestion() {
+      const area = document.getElementById('challenge-area');
+      const question = currentChallenge.questions[currentQuestionIndex];
+      const totalQuestions = currentChallenge.questions.length;
+
+      let questionHTML = `
+        <div class="glass-effect rounded-xl p-6 animate-slide-in">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <span class="text-emerald-400 font-semibold">${currentChallenge.title}</span>
+              <h2 class="font-orbitron text-2xl text-white">Questão ${currentQuestionIndex + 1}/${totalQuestions}</h2>
+            </div>
+            <div class="text-right">
+              <p class="text-slate-400 text-sm">Pontos neste desafio</p>
+              <p class="font-orbitron text-xl text-cyan-400">${challengeScore}</p>
+            </div>
+          </div>
+          
+          <div class="w-full h-2 bg-slate-700 rounded-full mb-6">
+            <div class="progress-bar h-full rounded-full transition-all" style="width: ${((currentQuestionIndex) / totalQuestions) * 100}%"></div>
+          </div>
+
+          <div class="bg-slate-800/50 rounded-lg p-6 mb-6">
+            <p class="text-xl text-white leading-relaxed">${question.question}</p>
+          </div>
+      `;
+
+      // Render based on question type
+      switch (question.type) {
+        case 'multiple':
+        case 'scenario':
+          questionHTML += renderMultipleChoice(question);
+          break;
+        case 'truefalse':
+          questionHTML += renderTrueFalse(question);
+          break;
+        case 'order':
+          questionHTML += renderOrderQuestion(question);
+          break;
+        case 'match':
+          questionHTML += renderMatchQuestion(question);
+          break;
+      }
+
+      questionHTML += `
+          <button id="skip-btn" class="mt-4 text-slate-500 hover:text-slate-300 transition-all">
+            Pular questão →
+          </button>
+        </div>
+      `;
+
+      area.innerHTML = questionHTML;
+
+      // Add skip button listener
+      document.getElementById('skip-btn').addEventListener('click', () => {
+        showResultModal('⏭️', 'Questão Pulada', question.explanation, '+0 XP');
+      });
+
+      // Add specific event listeners based on question type
+      setupQuestionListeners(question);
+    }
+
+    function renderMultipleChoice(question) {
+      return `
+        <div class="grid gap-3" id="options-container">
+          ${question.options.map((option, index) => `
+            <button class="option-btn w-full text-left bg-slate-700 hover:bg-slate-600 p-4 rounded-lg transition-all border-2 border-transparent hover:border-emerald-500/50" data-index="${index}">
+              <span class="inline-block w-8 h-8 rounded-full bg-slate-600 text-center leading-8 mr-3 font-bold">
+                ${String.fromCharCode(65 + index)}
+              </span>
+              ${option}
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderTrueFalse(question) {
+      return `
+        <div class="grid grid-cols-2 gap-4" id="options-container">
+          <button class="tf-btn bg-emerald-700 hover:bg-emerald-600 p-6 rounded-lg text-xl font-bold transition-all border-2 border-transparent hover:border-emerald-400" data-value="true">
+            ✓ VERDADEIRO
+          </button>
+          <button class="tf-btn bg-red-700 hover:bg-red-600 p-6 rounded-lg text-xl font-bold transition-all border-2 border-transparent hover:border-red-400" data-value="false">
+            ✗ FALSO
+          </button>
+        </div>
+      `;
+    }
+
+    function renderOrderQuestion(question) {
+      const shuffled = [...question.items].sort(() => Math.random() - 0.5);
+      return `
+        <div class="space-y-2" id="order-container">
+          <p class="text-slate-400 mb-4">Arraste os itens para a ordem correta:</p>
+          ${shuffled.map((item, index) => `
+            <div class="order-item bg-slate-700 p-4 rounded-lg cursor-move flex items-center gap-3 transition-all hover:bg-slate-600" draggable="true" data-original="${question.items.indexOf(item)}">
+              <span class="text-slate-400">☰</span>
+              <span class="font-medium">${item}</span>
+            </div>
+          `).join('')}
+        </div>
+        <button id="confirm-order" class="mt-6 w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 py-4 rounded-lg font-bold text-lg transition-all">
+          CONFIRMAR ORDEM
+        </button>
+      `;
+    }
+
+    function renderMatchQuestion(question) {
+      const shuffledRight = [...question.pairs.map(p => p.right)].sort(() => Math.random() - 0.5);
+      return `
+        <div class="grid md:grid-cols-2 gap-6" id="match-container">
+          <div class="space-y-3">
+            <p class="text-emerald-400 font-semibold mb-2">Termos</p>
+            ${question.pairs.map((pair, index) => `
+              <div class="match-left bg-slate-700 p-4 rounded-lg cursor-pointer transition-all hover:bg-emerald-700/50 border-2 border-transparent" data-index="${index}">
+                ${pair.left}
+              </div>
+            `).join('')}
+          </div>
+          <div class="space-y-3">
+            <p class="text-cyan-400 font-semibold mb-2">Definições</p>
+            ${shuffledRight.map((right, index) => `
+              <div class="match-right bg-slate-700 p-4 rounded-lg cursor-pointer transition-all hover:bg-cyan-700/50 border-2 border-transparent" data-original="${question.pairs.findIndex(p => p.right === right)}" data-index="${index}">
+                ${right}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <button id="confirm-match" class="mt-6 w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 py-4 rounded-lg font-bold text-lg transition-all">
+          CONFIRMAR ASSOCIAÇÕES
+        </button>
+      `;
+    }
+
+    function setupQuestionListeners(question) {
+      switch (question.type) {
+        case 'multiple':
+        case 'scenario':
+          document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const selected = parseInt(btn.dataset.index);
+              checkAnswer(selected === question.correct, question);
+            });
+          });
+          break;
+
+        case 'truefalse':
+          document.querySelectorAll('.tf-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const selected = btn.dataset.value === 'true';
+              checkAnswer(selected === question.correct, question);
+            });
+          });
+          break;
+
+        case 'order':
+          setupDragAndDrop();
+          document.getElementById('confirm-order').addEventListener('click', () => {
+            const items = document.querySelectorAll('.order-item');
+            const currentOrder = Array.from(items).map(item => parseInt(item.dataset.original));
+            const isCorrect = currentOrder.every((val, idx) => val === question.correctOrder[idx]);
+            checkAnswer(isCorrect, question);
+          });
+          break;
+
+        case 'match':
+          setupMatchGame(question);
+          break;
+      }
+    }
+
+    function setupDragAndDrop() {
+      const container = document.getElementById('order-container');
+      const items = container.querySelectorAll('.order-item');
+      let draggedItem = null;
+      let touchStartY = 0;
+
+      items.forEach(item => {
+        // Desktop drag support
+        item.addEventListener('dragstart', (e) => {
+          draggedItem = item;
+          item.classList.add('opacity-50');
+        });
+
+        item.addEventListener('dragend', () => {
+          draggedItem.classList.remove('opacity-50');
+          draggedItem = null;
+        });
+
+        item.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          item.classList.add('bg-emerald-700/30');
+        });
+
+        item.addEventListener('dragleave', () => {
+          item.classList.remove('bg-emerald-700/30');
+        });
+
+        item.addEventListener('drop', (e) => {
+          e.preventDefault();
+          item.classList.remove('bg-emerald-700/30');
+          if (draggedItem && draggedItem !== item) {
+            const allItems = [...container.querySelectorAll('.order-item')];
+            const draggedIndex = allItems.indexOf(draggedItem);
+            const targetIndex = allItems.indexOf(item);
+            
+            if (draggedIndex < targetIndex) {
+              item.parentNode.insertBefore(draggedItem, item.nextSibling);
+            } else {
+              item.parentNode.insertBefore(draggedItem, item);
+            }
+          }
+        });
+
+        // Mobile touch support with move up/down buttons
+        item.addEventListener('touchstart', (e) => {
+          touchStartY = e.touches[0].clientY;
+          draggedItem = item;
+          item.classList.add('bg-emerald-700/50');
+        });
+
+        item.addEventListener('touchmove', (e) => {
+          e.preventDefault();
+        });
+
+        item.addEventListener('touchend', (e) => {
+          const touchEndY = e.changedTouches[0].clientY;
+          const diff = touchStartY - touchEndY;
+          
+          if (Math.abs(diff) > 30) {
+            const allItems = [...container.querySelectorAll('.order-item')];
+            const currentIndex = allItems.indexOf(draggedItem);
+            
+            if (diff > 0 && currentIndex < allItems.length - 1) {
+              // Swipe up = move down in list
+              container.insertBefore(allItems[currentIndex + 1], draggedItem);
+            } else if (diff < 0 && currentIndex > 0) {
+              // Swipe down = move up in list
+              container.insertBefore(draggedItem, allItems[currentIndex - 1]);
+            }
+          }
+          
+          draggedItem.classList.remove('bg-emerald-700/50');
+          draggedItem = null;
+        });
+      });
+
+      // Add mobile-friendly up/down buttons for each item
+      items.forEach((item, index) => {
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = 'md:hidden flex gap-2 absolute right-4 top-1/2 transform -translate-y-1/2';
+        
+        // Only show on mobile
+        if (window.innerWidth <= 768) {
+          const upBtn = document.createElement('button');
+          upBtn.className = 'bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded text-sm';
+          upBtn.textContent = '↑';
+          upBtn.onclick = (e) => {
+            e.stopPropagation();
+            const allItems = [...container.querySelectorAll('.order-item')];
+            const currentIndex = allItems.indexOf(item);
+            if (currentIndex > 0) {
+              container.insertBefore(item, allItems[currentIndex - 1]);
+            }
+          };
+          
+          const downBtn = document.createElement('button');
+          downBtn.className = 'bg-slate-600 hover:bg-slate-500 text-white px-2 py-1 rounded text-sm';
+          downBtn.textContent = '↓';
+          downBtn.onclick = (e) => {
+            e.stopPropagation();
+            const allItems = [...container.querySelectorAll('.order-item')];
+            const currentIndex = allItems.indexOf(item);
+            if (currentIndex < allItems.length - 1) {
+              container.insertBefore(allItems[currentIndex + 1], item);
+            }
+          };
+          
+          controlsDiv.appendChild(upBtn);
+          controlsDiv.appendChild(downBtn);
+          item.style.position = 'relative';
+          item.appendChild(controlsDiv);
+        }
+      });
+    }
+
+    let matchSelections = { left: null, right: null };
+    let matches = [];
+
+    function setupMatchGame(question) {
+      matchSelections = { left: null, right: null };
+      matches = [];
+
+      document.querySelectorAll('.match-left').forEach(item => {
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.match-left').forEach(i => i.classList.remove('border-emerald-400', 'bg-emerald-700/50'));
+          item.classList.add('border-emerald-400', 'bg-emerald-700/50');
+          matchSelections.left = parseInt(item.dataset.index);
+          tryMatch(question);
+        });
+      });
+
+      document.querySelectorAll('.match-right').forEach(item => {
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.match-right').forEach(i => i.classList.remove('border-cyan-400', 'bg-cyan-700/50'));
+          item.classList.add('border-cyan-400', 'bg-cyan-700/50');
+          matchSelections.right = parseInt(item.dataset.original);
+          tryMatch(question);
+        });
+      });
+
+      document.getElementById('confirm-match').addEventListener('click', () => {
+        const isCorrect = matches.length === question.pairs.length && 
+          matches.every(m => m.left === m.right);
+        checkAnswer(isCorrect, question);
+      });
+    }
+
+    function tryMatch(question) {
+      if (matchSelections.left !== null && matchSelections.right !== null) {
+        matches.push({ left: matchSelections.left, right: matchSelections.right });
+        
+        // Visual feedback
+        const leftItem = document.querySelector(`.match-left[data-index="${matchSelections.left}"]`);
+        const rightItem = document.querySelector(`.match-right[data-original="${matchSelections.right}"]`);
+        
+        if (matchSelections.left === matchSelections.right) {
+          leftItem.classList.add('bg-emerald-800', 'opacity-60');
+          rightItem.classList.add('bg-emerald-800', 'opacity-60');
+          leftItem.style.pointerEvents = 'none';
+          rightItem.style.pointerEvents = 'none';
+        }
+
+        // Reset selections
+        document.querySelectorAll('.match-left').forEach(i => i.classList.remove('border-emerald-400'));
+        document.querySelectorAll('.match-right').forEach(i => i.classList.remove('border-cyan-400'));
+        matchSelections = { left: null, right: null };
+      }
+    }
+
+    function checkAnswer(isCorrect, question) {
+      questionsAnswered.add(currentQuestionIndex);
+      
+      let points = 0;
+      if (isCorrect) {
+        points = Math.floor(currentChallenge.xpReward / currentChallenge.questions.length);
+        challengeScore += points;
+      }
+
+      const icon = isCorrect ? '✅' : '❌';
+      const title = isCorrect ? 'CORRETO!' : 'INCORRETO';
+      const pointsText = isCorrect ? `+${points} XP` : '+0 XP';
+
+      showResultModal(icon, title, question.explanation, pointsText);
+    }
+
+    function showResultModal(icon, title, message, points) {
+      document.getElementById('result-icon').textContent = icon;
+      document.getElementById('result-title').textContent = title;
+      document.getElementById('result-title').className = `font-orbitron text-2xl mb-2 ${icon === '✅' ? 'text-emerald-400' : icon === '❌' ? 'text-red-400' : 'text-yellow-400'}`;
+      document.getElementById('result-message').textContent = message;
+      document.getElementById('result-points').textContent = points;
+      document.getElementById('result-modal').classList.remove('hidden');
+    }
+
+    async function continueAfterResult() {
+      document.getElementById('result-modal').classList.add('hidden');
+      currentQuestionIndex++;
+
+      if (currentQuestionIndex >= currentChallenge.questions.length) {
+        await finishChallenge();
+      } else {
+        renderCurrentQuestion();
+      }
+    }
+
+    async function finishChallenge() {
+      // Calculate new stats
+      const newScore = (currentPlayer.total_score || 0) + challengeScore;
+      const newLevel = Math.floor(newScore / 1000) + 1;
+      const newChallengesCompleted = (currentPlayer.challenges_completed || 0) + 1;
+      
+      // Add badge for completing challenge
+      let badges = (currentPlayer.badges_earned || '').split(',').filter(b => b);
+      const badgesToAdd = [];
+
+      // Challenge-specific badge
+      if (!badges.includes(currentChallenge.id)) {
+        badges.push(currentChallenge.id);
+        badgesToAdd.push(currentChallenge.badge);
+      }
+
+      // First challenge badge
+      if (!badges.includes('first-challenge') && newChallengesCompleted === 1) {
+        badges.push('first-challenge');
+        badgesToAdd.push(allBadges.find(b => b.id === 'first-challenge'));
+      }
+
+      // Perfect score badge
+      if (challengeScore === currentChallenge.xpReward && !badges.includes('perfect-score')) {
+        badges.push('perfect-score');
+        badgesToAdd.push(allBadges.find(b => b.id === 'perfect-score'));
+      }
+
+      // Level 5 badge
+      if (newLevel >= 5 && !badges.includes('level-5')) {
+        badges.push('level-5');
+        badgesToAdd.push(allBadges.find(b => b.id === 'level-5'));
+      }
+
+      // All challenges badge
+      if (newChallengesCompleted >= challenges.length && !badges.includes('all-challenges')) {
+        badges.push('all-challenges');
+        badgesToAdd.push(allBadges.find(b => b.id === 'all-challenges'));
+      }
+
+      // Update player
+      currentPlayer.total_score = newScore;
+      currentPlayer.current_level = newLevel;
+      currentPlayer.challenges_completed = newChallengesCompleted;
+      currentPlayer.badges_earned = badges.join(',');
+
+      // Update in the array
+      const playerIndex = allPlayers.findIndex(p => p.player_name === currentPlayer.player_name);
+      if (playerIndex >= 0) {
+        allPlayers[playerIndex] = currentPlayer;
+      }
+
+      // Save to cloud (or localStorage as fallback)
+      await savePlayerToCloud(currentPlayer);
+      savePlayersToLocalStorage();
+
+      // Show badge modals
+      for (const badge of badgesToAdd) {
+        if (badge) {
+          await showBadgeEarned(badge);
+        }
+      }
+
+      // Return to challenge selection
+      document.getElementById('challenge-area').classList.add('hidden');
+      document.getElementById('challenge-selection').classList.remove('hidden');
+      document.getElementById('badges-section').classList.remove('hidden');
+      
+      updatePlayerDisplay();
+      renderChallengeSelection();
+    }
+
+    function showBadgeEarned(badge) {
+      return new Promise(resolve => {
+        document.getElementById('badge-earned-icon').textContent = badge.icon;
+        document.getElementById('badge-earned-name').textContent = badge.name;
+        document.getElementById('badge-earned-desc').textContent = badge.desc;
+        document.getElementById('badge-modal').classList.remove('hidden');
+        
+        const closeHandler = () => {
+          document.getElementById('badge-modal').classList.add('hidden');
+          document.getElementById('badge-continue').removeEventListener('click', closeHandler);
+          resolve();
+        };
+        
+        document.getElementById('badge-continue').addEventListener('click', closeHandler);
+      });
+    }
+
+    function closeBadgeModal() {
+      document.getElementById('badge-modal').classList.add('hidden');
+    }
+
+    function showLeaderboard() {
+      updateLeaderboard();
+      document.getElementById('leaderboard-modal').classList.remove('hidden');
+    }
+
+    function hideLeaderboard() {
+      document.getElementById('leaderboard-modal').classList.add('hidden');
+    }
+
+    function clearRanking() {
+      const btn = document.getElementById('clear-ranking-btn');
+      
+      // If already in confirm state, execute clear
+      if (btn.dataset.confirming === 'true') {
+        allPlayers = [];
+        savePlayersToLocalStorage();
+        btn.dataset.confirming = 'false';
+        btn.textContent = '🗑️ Limpar';
+        btn.classList.remove('bg-red-900', 'border-red-600');
+        btn.classList.add('text-red-400', 'hover:text-red-300');
+        updateLeaderboard();
+        hideLeaderboard();
+        showResultModal('🗑️', 'Ranking Limpo', 'Todos os dados foram removidos com sucesso!', '');
+        return;
+      }
+
+      // First click - ask for confirmation
+      btn.dataset.confirming = 'true';
+      btn.textContent = '✓ Confirmar?';
+      btn.classList.remove('text-red-400', 'hover:text-red-300');
+      btn.classList.add('bg-red-900', 'border-red-600');
+
+      // Reset after 3 seconds if not clicked
+      setTimeout(() => {
+        if (btn.dataset.confirming === 'true') {
+          btn.dataset.confirming = 'false';
+          btn.textContent = '🗑️ Limpar';
+          btn.classList.remove('bg-red-900', 'border-red-600');
+          btn.classList.add('text-red-400', 'hover:text-red-300');
+        }
+      }, 3000);
+    }
+
+    function updateLeaderboard() {
+      const list = document.getElementById('leaderboard-list');
+      const sorted = [...allPlayers].sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
+
+      if (sorted.length === 0) {
         list.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>';
         return;
       }
-      const me = window.currentPlayer?.player_name || "";
-      list.innerHTML = rows.map((r,i)=>{
-        const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
-        const isMe = me && r.player_name===me;
-        const turma = r.class_group ? ` • Turma ${r.class_group}` : '';
+
+      list.innerHTML = sorted.slice(0, 10).map((player, index) => {
+        const medals = ['🥇', '🥈', '🥉'];
+        const medal = medals[index] || `#${index + 1}`;
+        const isCurrentPlayer = currentPlayer && player.player_name === currentPlayer.player_name;
+        
         return `
-          <div class="flex items-center gap-4 p-4 rounded-lg ${isMe?'bg-emerald-900/30 border border-emerald-500/50 row-highlight':'bg-slate-800/50'}">
+          <div class="flex items-center gap-4 p-4 rounded-lg ${isCurrentPlayer ? 'bg-emerald-900/30 border border-emerald-500/50' : 'bg-slate-800/50'}">
             <span class="text-2xl w-10 text-center">${medal}</span>
             <div class="flex-1">
-              <p class="font-bold ${isMe?'text-emerald-400':'text-white'}">${r.player_name}</p>
-              <p class="text-sm text-slate-400">Nível ${r.current_level??1} • ${r.challenges_completed??0} desafios${turma}</p>
+              <p class="font-bold ${isCurrentPlayer ? 'text-emerald-400' : 'text-white'}">${player.player_name}</p>
+              <p class="text-sm text-slate-400">Nível ${player.current_level || 1} • ${player.challenges_completed || 0} desafios</p>
             </div>
             <div class="text-right">
-              <p class="font-orbitron text-xl text-cyan-400">${r.total_score??0}</p>
+              <p class="font-orbitron text-xl text-cyan-400">${player.total_score || 0}</p>
               <p class="text-xs text-slate-500">XP</p>
             </div>
-          </div>`;
+          </div>
+        `;
       }).join('');
-    } catch(e){
-      console.error(e);
+    }
+
+    function returnToMenu() {
+      document.getElementById('game-dashboard').classList.add('hidden');
+      document.getElementById('challenge-area').classList.add('hidden');
+      document.getElementById('challenge-selection').classList.remove('hidden');
+      document.getElementById('badges-section').classList.remove('hidden');
+      document.getElementById('main-menu').classList.remove('hidden');
+      
+      currentChallenge = null;
+      currentQuestionIndex = 0;
+    }
+
+    // Initialize the app
+    initializeApp();
+  </script>
+ <script>
+// === Overrides para usar ranking ONLINE via Supabase Edge Functions ===
+// Cole aqui a SUA URL base do Supabase (sem barra no final):
+const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+async function apiGet(path) {
+  const res = await fetch(`${SUPABASE_BASE}${path}`);
+  if (!res.ok) throw new Error('API GET failed');
+  return res.json();
+}
+async function apiPost(path, data, headers = {}) {
+  const res = await fetch(`${SUPABASE_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data || {})
+  });
+  if (!res.ok) throw new Error('API POST failed');
+  return res.json();
+}
+
+// Guarda a função original (se existir) para manter o fluxo do jogo
+const __finishChallenge = typeof finishChallenge === 'function' ? finishChallenge : null;
+
+// START GAME: cria/carrega jogador no Supabase
+startGame = async function () {
+  const nameInput = document.getElementById('player-name-input');
+  const playerName = nameInput?.value?.trim();
+  if (!playerName) {
+    nameInput?.classList?.add('animate-shake', 'border-red-500');
+    setTimeout(() => nameInput?.classList?.remove('animate-shake', 'border-red-500'), 500);
+    return;
+  }
+  try {
+    const res = await apiGet(`/get-player?name=${encodeURIComponent(playerName)}`);
+    if (res && res.player) {
+      window.currentPlayer = res.player;
+    } else {
+      window.currentPlayer = {
+        player_name: playerName,
+        total_score: 0,
+        current_level: 1,
+        badges_earned: '',
+        challenges_completed: 0
+      };
+      try { await apiPost('/save-player', window.currentPlayer); } catch (e) { console.warn('Falha ao criar jogador online:', e); }
+    }
+  } catch (e) {
+    console.warn('API indisponível, iniciando local:', e);
+    window.currentPlayer = { player_name: playerName, total_score: 0, current_level: 1, badges_earned: '', challenges_completed: 0 };
+  }
+  const showGameDashboard = window.showGameDashboard || function(){};
+  showGameDashboard();
+};
+
+// FINISH CHALLENGE: sincroniza no Supabase ao finalizar
+finishChallenge = async function () {
+  if (__finishChallenge) await __finishChallenge();
+  try {
+    await apiPost('/save-player', {
+      player_name: window.currentPlayer.player_name,
+      total_score: window.currentPlayer.total_score,
+      current_level: window.currentPlayer.current_level,
+      badges_earned: window.currentPlayer.badges_earned,
+      challenges_completed: window.currentPlayer.challenges_completed
+    });
+  } catch (e) {
+    console.warn('Não foi possível sincronizar com ranking online:', e);
+  }
+};
+
+// LEADERBOARD: busca do Supabase
+updateLeaderboard = function () {
+  (async () => {
+    const list = document.getElementById('leaderboard-list');
+    try {
+      const res = await apiGet('/get-leaderboard');
+      const sorted = res.players || [];
+      if (sorted.length === 0) {
+        list.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>';
+        return;
+      }
+      list.innerHTML = sorted.map((player, index) => {
+        const medals = ['🥇','🥈','🥉'];
+        const medal = medals[index] || `#${index+1}`;
+        const isCurrentPlayer = window.currentPlayer && player.player_name === window.currentPlayer.player_name;
+        return `
+ <div class="flex items-center gap-4 p-4 rounded-lg ${isCurrentPlayer ? 'bg-emerald-900/30 border border-emerald-500/50' : 'bg-slate-800/50'}">
+   <span class="text-2xl w-10 text-center">${medal}</span>
+   <div class="flex-1">
+     <p class="font-bold ${isCurrentPlayer ? 'text-emerald-400' : 'text-white'}">${player.player_name}</p>
+     <p class="text-sm text-slate-400">Nível ${player.current_level || 1} • ${player.challenges_completed || 0} desafios</p>
+   </div>
+   <div class="text-right">
+     <p class="font-orbitron text-xl text-cyan-400">${player.total_score || 0}</p>
+     <p class="text-xs text-slate-500">XP</p>
+   </div>
+ </div>`;
+      }).join('');
+    } catch (e) {
+      console.error('Erro ao carregar ranking online', e);
       list.innerHTML = '<p class="text-red-400 text-center py-8">Não foi possível carregar o ranking online.</p>';
+    }
+  })();
+};
+</script>
+
+ 
+<script>
+// ===== SUPABASE INTEGRAÇÃO + TURMA + RANKING ONLINE =====
+const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+async function apiGet(path) {
+  const res = await fetch(`${SUPABASE_BASE}${path}`);
+  if (!res.ok) throw new Error('API GET failed');
+  return res.json();
+}
+async function apiPost(path, data, headers = {}) {
+  const res = await fetch(`${SUPABASE_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(data || {})
+  });
+  if (!res.ok) throw new Error('API POST failed');
+  return res.json();
+}
+
+// Injeta campo de TURMA via JS para não depender do HTML original
+(function injectClassGroupField(){
+  const parent = document.querySelector('#main-menu .glass-effect');
+  if (!parent || document.getElementById('class-group-input')) return;
+  const div = document.createElement('div');
+  div.className = 'mb-2';
+  div.innerHTML = `\n    <label class="block text-emerald-400 font-semibold mb-2 text-sm sm:text-base">TURMA</label>\n    <input type="text" id="class-group-input" placeholder="Ex.: T-101" class="w-full bg-slate-800 border-2 border-emerald-500/50 rounded-lg px-4 py-3 text-white focus:border-emerald-400 focus:outline-none transition-all text-base">\n  `;
+  const nameBlock = parent.querySelector('.mb-6');
+  if (nameBlock) nameBlock.after(div); else parent.appendChild(div);
+})();
+
+// Direciona a "nuvem" para Supabase
+window.savePlayerToCloud = async function(player){
+  try {
+    await apiPost('/save-player', {
+      player_name: player.player_name,
+      total_score: player.total_score || 0,
+      current_level: player.current_level || 1,
+      badges_earned: player.badges_earned || '',
+      challenges_completed: player.challenges_completed || 0,
+      class_group: player.class_group || ''
+    });
+  } catch(e){ console.warn('[savePlayerToCloud] falhou', e); }
+  try { savePlayersToLocalStorage && savePlayersToLocalStorage(); } catch {}
+};
+
+// Overrides principais
+const __finishChallenge = (typeof finishChallenge === 'function') ? finishChallenge : null;
+
+startGame = async function(){
+  const nameInput = document.getElementById('player-name-input');
+  const classInput = document.getElementById('class-group-input');
+  const playerName = nameInput?.value?.trim();
+  const classGroup = classInput?.value?.trim() || '';
+  if (!playerName){
+    nameInput?.classList?.add('animate-shake','border-red-500');
+    setTimeout(()=>nameInput?.classList?.remove('animate-shake','border-red-500'),500);
+    return;
+  }
+  try{
+    const res = await apiGet(`/get-player?name=${encodeURIComponent(playerName)}`);
+    if (res && res.player){
+      window.currentPlayer = res.player;
+    } else {
+      window.currentPlayer = { player_name: playerName, total_score: 0, current_level: 1, badges_earned: '', challenges_completed: 0, class_group: classGroup };
+      try { await apiPost('/save-player', window.currentPlayer); } catch(e){ console.warn('Falha ao criar jogador online', e); }
+    }
+  } catch(e){
+    console.warn('API indisponível, iniciando local', e);
+    window.currentPlayer = { player_name: playerName, total_score: 0, current_level: 1, badges_earned: '', challenges_completed: 0, class_group: classGroup };
+  }
+  (window.showGameDashboard || function(){})();
+};
+
+finishChallenge = async function(){
+  if (__finishChallenge) await __finishChallenge();
+  try{
+    await apiPost('/save-player', {
+      player_name: window.currentPlayer.player_name,
+      total_score: window.currentPlayer.total_score,
+      current_level: window.currentPlayer.current_level,
+      badges_earned: window.currentPlayer.badges_earned,
+      challenges_completed: window.currentPlayer.challenges_completed,
+      class_group: window.currentPlayer.class_group || ''
+    });
+  } catch(e){ console.warn('Sync após desafio falhou', e); }
+};
+
+updateLeaderboard = function(){
+  (async()=>{
+    const list = document.getElementById('leaderboard-list');
+    try {
+      const res = await apiGet('/get-leaderboard');
+      const sorted = res.players || [];
+      if (sorted.length === 0){ list.innerHTML = '<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>'; return; }
+      list.innerHTML = sorted.map((player, idx)=>{
+        const medals=['🥇','🥈','🥉']; const medal = medals[idx] || `#${idx+1}`;
+        const isMe = window.currentPlayer && player.player_name === window.currentPlayer.player_name;
+        const turma = player.class_group ? ` • Turma ${player.class_group}` : '';
+        return `\n <div class="flex items-center gap-4 p-4 rounded-lg ${isMe ? 'bg-emerald-900/30 border border-emerald-500/50' : 'bg-slate-800/50'}">\n  <span class="text-2xl w-10 text-center">${medal}</span>\n  <div class="flex-1">\n   <p class="font-bold ${isMe ? 'text-emerald-400' : 'text-white'}">${player.player_name}</p>\n   <p class="text-sm text-slate-400">Nível ${player.current_level || 1} • ${player.challenges_completed || 0} desafios${turma}</p>\n  </div>\n  <div class="text-right">\n   <p class="font-orbitron text-xl text-cyan-400">${player.total_score || 0}</p>\n   <p class="text-xs text-slate-500">XP</p>\n  </div>\n </div>`;
+      }).join('');
+    } catch(e){ console.error('Erro ranking online', e); list.innerHTML = '<p class="text-red-400 text-center py-8">Não foi possível carregar o ranking online.</p>'; }
+  })();
+};
+
+ catch(e){ showResultModal && showResultModal('⚠️','Ação negada','Chave inválida ou erro no servidor.',''); }
+  })();
+};
+
+// Força salvar antes de abrir o ranking + auto-save periódico
+(function hookLeaderboardButton(){
+  function attach(){
+    const btn = document.getElementById('leaderboard-btn');
+    if (!btn || btn.__hookedForceSave) return !!btn;
+    btn.addEventListener('click', async ()=>{
+      try{
+        const p = window.currentPlayer; if (!p || !p.player_name) return;
+        await apiPost('/save-player', {
+          player_name:p.player_name, total_score:p.total_score||0, current_level:p.current_level||1,
+          badges_earned:p.badges_earned||'', challenges_completed:p.challenges_completed||0, class_group:p.class_group||''
+        });
+      } catch{}
+    }, { capture:true });
+    btn.__hookedForceSave = true; return true;
+  }
+  if (!attach()){
+    let t=0; const iv=setInterval(()=>{ t++; if (attach() || t>10) clearInterval(iv); }, 500);
+  }
+})();
+
+(function setupAutoSave(){
+  const INTERVAL_MS = 4000; let lastSig = null;
+  async function autoSave(){
+    try{
+      const p = window.currentPlayer; if (!p || !p.player_name) return;
+      const sig = [p.player_name,p.total_score,p.current_level,p.challenges_completed,p.badges_earned,p.class_group||''].join('|');
+      if (sig === lastSig) return;
+      await apiPost('/save-player', {
+        player_name:p.player_name, total_score:p.total_score||0, current_level:p.current_level||1,
+        badges_earned:p.badges_earned||'', challenges_completed:p.challenges_completed||0, class_group:p.class_group||''
+      });
+      lastSig = sig;
+    } catch{}
+  }
+  setInterval(autoSave, INTERVAL_MS);
+  document.addEventListener('visibilitychange', ()=>{ if (document.hidden) autoSave(); });
+  window.addEventListener('beforeunload', ()=>{
+    try{
+      const p = window.currentPlayer; if (!p || !p.player_name) return;
+      const body = JSON.stringify({ player_name:p.player_name, total_score:p.total_score||0, current_level:p.current_level||1, badges_earned:p.badges_earned||'', challenges_completed:p.challenges_completed||0, class_group:p.class_group||'' });
+      navigator.sendBeacon?.(`${SUPABASE_BASE}/save-player`, new Blob([body],{type:'application/json'}));
+    } catch{}
+  });
+})();
+</script>
+<script>
+// Gatilho direto: criar/atualizar jogador no Supabase ao clicar "INICIAR MISSÃO"
+(function forceCreateOnStart(){
+  const btn = document.getElementById('start-game-btn');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    try {
+      const nameInput  = document.getElementById('player-name-input');
+      const classInput = document.getElementById('class-group-input');
+      const player_name = (nameInput?.value || '').trim();
+      const class_group = (classInput?.value || '').trim();
+      if (!player_name) return;
+
+      // Usa a mesma base das suas Edge Functions (já definida no arquivo)
+      const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+      await fetch(`${SUPABASE_BASE}/save-player`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_name,
+          total_score: 0,
+          current_level: 1,
+          badges_earned: '',
+          challenges_completed: 0,
+          class_group
+        })
+      });
+      // não mostra nada na tela — só garante o registro no banco
+    } catch(e) {
+      // silencioso
+    }
+  }, { capture: true });
+})();
+</script>
+  <script>
+// Intercepta o botão "Limpar" para chamar a Edge Function clear-ranking (e bloqueia o handler antigo)
+(function interceptClearButton(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  function attach(){
+    const btn = document.getElementById('clear-ranking-btn');
+    if (!btn || btn.__supabaseHook) return !!btn;
+
+    btn.addEventListener('click', async (ev) => {
+      try {
+        // Bloqueia o listener antigo (local) e garante que só este rode
+        ev.stopImmediatePropagation();
+        ev.preventDefault();
+
+        const key = prompt('Para limpar o ranking geral, digite a CHAVE DE ADMINISTRADOR (ou deixe vazio):') || '';
+
+        const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, {
+          method: 'POST',
+          headers: { 'x-admin-key': key }
+        });
+
+        if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
+
+        // Feedback e atualização de UI
+        if (typeof hideLeaderboard === 'function') hideLeaderboard();
+        if (typeof updateLeaderboard === 'function') updateLeaderboard();
+        if (typeof showResultModal === 'function') {
+          showResultModal('🗑️','Ranking Limpo','Todos os dados foram removidos do banco.','');
+        }
+      } catch (e) {
+        if (typeof showResultModal === 'function') {
+          showResultModal('⚠️','Ação negada','Chave inválida ou erro no servidor.','');
+        }
+        console.warn('clear-ranking erro', e);
+      }
+    }, { capture: true }); // <- captura o clique antes do handler antigo
+
+    btn.__supabaseHook = true;
+    return true;
+  }
+
+  if (!attach()) {
+    // Se o botão ainda não existe (UI ainda montando), tentar por alguns instantes
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if (attach() || tries > 10) clearInterval(iv);
+    }, 500);
+  }
+})();
+</script>
+  <script>
+// Substitui o comportamento do botão "Limpar" para NÃO pedir chave (enquanto estiver sem proteção)
+(function noKeyClear(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+  const btn = document.getElementById('clear-ranking-btn');
+  if (!btn) return;
+  btn.addEventListener('click', async (ev) => {
+    try {
+      ev.stopImmediatePropagation?.(); ev.preventDefault?.();
+      const r = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method:'POST' });
+      if (!r.ok) throw new Error('Erro ao limpar');
+      if (typeof hideLeaderboard === 'function') hideLeaderboard();
+      if (typeof updateLeaderboard === 'function') updateLeaderboard();
+      if (typeof showResultModal === 'function') {
+        showResultModal('🗑️','Ranking Limpo','Dados removidos do banco com sucesso!','');
+      }
+    } catch (e) {
+      if (typeof showResultModal === 'function') {
+        showResultModal('⚠️','Falha ao limpar','Tente novamente em alguns segundos.','');
+      }
+      console.warn('clear-ranking', e);
+    }
+  }, { capture:true });
+})();
+</script>
+  <script>
+// LIMPAR SEM CHAVE (enquanto a function estiver pública)
+(function noKeyClear(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+  const btn = document.getElementById('clear-ranking-btn');
+  if (!btn) return;
+
+  // Intercepta antes de qualquer handler antigo
+  btn.addEventListener('click', async (ev) => {
+    try {
+      ev.stopImmediatePropagation?.();
+      ev.preventDefault?.();
+
+      const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method: 'POST' });
+      if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
+
+      // Fecha e atualiza o ranking
+      if (typeof hideLeaderboard === 'function') hideLeaderboard();
+      if (typeof updateLeaderboard === 'function') updateLeaderboard();
+      if (typeof showResultModal === 'function') {
+        showResultModal('🗑️', 'Ranking Limpo', 'Dados removidos do banco com sucesso!', '');
+      }
+    } catch (e) {
+      if (typeof showResultModal === 'function') {
+        showResultModal('⚠️', 'Falha ao limpar', 'Tente novamente em alguns segundos.', '');
+      }
+      console.warn('clear-ranking', e);
+    }
+  }, { capture: true });
+})();
+</script>
+  <script>
+// ===== LIMPAR SEM CHAVE (força sem prompt) =====
+(function forceNoKeyClear(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  // 1) Sobrescreve a função global para não pedir chave
+  window.clearRanking = async function () {
+    try {
+      const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method: 'POST' });
+      if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
+      // Fecha e atualiza o ranking
+      if (typeof hideLeaderboard === 'function') hideLeaderboard();
+      if (typeof updateLeaderboard === 'function') updateLeaderboard();
+      if (typeof showResultModal === 'function') {
+        showResultModal('🗑️', 'Ranking Limpo', 'Dados removidos do banco com sucesso!', '');
+      }
+    } catch (e) {
+      if (typeof showResultModal === 'function') {
+        showResultModal('⚠️', 'Falha ao limpar', 'Tente novamente em alguns segundos.', '');
+      }
+      console.warn('clear-ranking', e);
     }
   };
 
-  // LIMPAR RANKING
-  document.getElementById('clear-ranking-btn').addEventListener('click', async (ev)=>{
-    ev.preventDefault();
-    if (!confirm("Tem certeza que deseja limpar todo o ranking?")) return;
-    try{
-      await clearRankingOnServer();
-      if (typeof hideLeaderboard==="function") hideLeaderboard();
-      await window.updateLeaderboard();
-      if (typeof showResultModal==="function") showResultModal('🗑️','Ranking Limpo','Dados removidos do banco com sucesso!','');
-    } catch(e){
-      console.warn(e);
-      if (typeof showResultModal==="function") showResultModal('⚠️','Falha ao limpar','Tente novamente em alguns segundos.','');
-    }
-  }, { capture:true });
+  // 2) Intercepta o clique do botão e impede qualquer handler antigo que exiba prompt
+  function attach() {
+    const btn = document.getElementById('clear-ranking-btn');
+    if (!btn || btn.__noKeyHook) return !!btn;
 
-  document.getElementById('leaderboard-btn').addEventListener('click', ()=> window.updateLeaderboard(), { capture:true });
+    btn.addEventListener('click', async (ev) => {
+      ev.stopImmediatePropagation?.(); // bloqueia o listener antigo
+      ev.preventDefault?.();
+      try { await window.clearRanking(); } catch {}
+    }, { capture: true }); // captura ANTES do handler antigo
+
+    btn.__noKeyHook = true;
+    return true;
+  }
+
+  if (!attach()) {
+    // se o botão ainda não existir, tenta por alguns instantes
+    let tries = 0;
+    const iv = setInterval(() => { tries++; if (attach() || tries > 10) clearInterval(iv); }, 500);
+  }
+})();
+</script>
+  <script>
+// ===== LIMPAR SEM CHAVE (força SEM prompt e SEM handlers antigos) =====
+(function hardNoKeyClear(){
+  const SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  // 1) Substitui a função global para não pedir chave
+  window.clearRanking = async function () {
+    try {
+      const res = await fetch(`${SUPABASE_BASE}/clear-ranking`, { method: 'POST' });
+      if (!res.ok) throw new Error(await res.text().catch(() => 'Erro ao limpar'));
+      // Fecha e atualiza o ranking
+      if (typeof hideLeaderboard === 'function') hideLeaderboard();
+      if (typeof updateLeaderboard === 'function') updateLeaderboard();
+      if (typeof showResultModal === 'function') {
+        showResultModal('🗑️', 'Ranking Limpo', 'Dados removidos do banco com sucesso!', '');
+      }
+    } catch (e) {
+      if (typeof showResultModal === 'function') {
+        showResultModal('⚠️', 'Falha ao limpar', 'Tente novamente em alguns segundos.', '');
+      }
+      console.warn('clear-ranking', e);
+    }
+  };
+
+  // 2) Remove event listeners antigos do botão (clonando o elemento)
+  function stripListenersAndWire() {
+    const oldBtn = document.getElementById('clear-ranking-btn');
+    if (!oldBtn) return false;
+
+    const newBtn = oldBtn.cloneNode(true); // clona sem os listeners
+    oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+
+    // 3) Liga nosso clique SEM prompt e bloqueia qualquer outro handler
+    newBtn.addEventListener('click', async (ev) => {
+      ev.stopImmediatePropagation?.();
+      ev.preventDefault?.();
+      try { await window.clearRanking(); } catch {}
+    }, { capture: true });
+
+    // marca para não repetir
+    newBtn.__noKeyHook = true;
+    return true;
+  }
+
+  // tenta agora; se o botão ainda não existir, re-tenta por alguns instantes
+  if (!stripListenersAndWire()) {
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if (stripListenersAndWire() || tries > 10) clearInterval(iv);
+    }, 500);
+  }
+})();
+</script>
+  <style>
+/* Destaque da linha do aluno no ranking */
+@keyframes rowGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
+  60%  { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+.row-highlight {
+  border: 1px solid rgba(16,185,129,.6) !important;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.35);
+  animation: rowGlow 2s ease-out infinite;
+}
+</style>
+
+<script>
+/* ===========================================================
+   SALVAR A CADA ACERTO — GANCHO NO "CONTINUAR" (ES5, compatível)
+   =========================================================== */
+(function saveOnContinueES5(){
+  var SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+  var lastSavedStamp = null; // para não salvar duas vezes a mesma pergunta
+
+  function $(id){ return document.getElementById(id); }
+  function getText(el){ return el ? (el.textContent || el.innerText || '') : ''; }
+
+  function isRankingOpen(){
+    var m = $('leaderboard-modal');
+    return m && m.className.indexOf('hidden') === -1;
+  }
+
+  function updateHUD(p){
+    var scoreEl = $('score-display');
+    var levelEl = $('level-display');
+    var xpEl    = $('xp-display');
+    var bar     = $('xp-bar');
+    if (scoreEl) scoreEl.textContent = p.total_score || 0;
+    if (levelEl) levelEl.textContent = p.current_level || 1;
+    var xpForLevel = (p.total_score || 0) % 1000;
+    if (xpEl)  xpEl.textContent = xpForLevel + '/1000 XP';
+    if (bar)   bar.style.width  = ((xpForLevel / 1000) * 100) + '%';
+  }
+
+  function saveToSupabase(p, cb){
+    var body = {
+      player_name: p.player_name,
+      total_score: p.total_score || 0,
+      current_level: p.current_level || 1,
+      badges_earned: p.badges_earned || '',
+      challenges_completed: p.challenges_completed || 0,
+      class_group: p.class_group || ''
+    };
+
+    // Se seu arquivo já tem apiPost, use-o
+    if (typeof window.apiPost === 'function') {
+      window.apiPost('/save-player', body).then(function(){ if(cb) cb(200); }).catch(function(){ if(cb) cb(500); });
+      return;
+    }
+
+    // Fallback com fetch (ES5-friendly)
+    fetch(SUPABASE_BASE + '/save-player', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify(body)
+    }).then(function(r){ if(cb) cb(r.status); }).catch(function(){ if(cb) cb(500); });
+  }
+
+  function refreshLeaderboardAndHighlight(){
+    if (!isRankingOpen()) return;
+    if (typeof window.updateLeaderboard === 'function') {
+      window.updateLeaderboard();
+      setTimeout(function(){
+        try {
+          var list = $('leaderboard-list');
+          var name = window.currentPlayer && window.currentPlayer.player_name;
+          if (!list || !name) return;
+          var i, card, cards = list.children;
+          for (i=0; i<cards.length; i++){
+            card = cards[i];
+            card.classList.remove('row-highlight');
+            if ((card.textContent || '').indexOf(name) !== -1) {
+              card.classList.add('row-highlight');
+              card.scrollIntoView({ block:'nearest', behavior:'smooth' });
+            }
+          }
+        } catch (e) {}
+      }, 150);
+    }
+  }
+
+  function gainedFromModal(){
+    var el = $('result-points');
+    var txt = getText(el);                  // ex.: "+100 XP"
+    var m = txt.match(/\+(\d+)/);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+
+  function currentStamp(){
+    // usa o índice global se existir; senão, timestamp
+    if (typeof window.currentQuestionIndex === 'number') return 'q_' + window.currentQuestionIndex;
+    return 't_' + Date.now();
+  }
+
+  function handler(ev){
+    // calculo de stamp para evitar duplicado
+    var stamp = currentStamp();
+    if (stamp === lastSavedStamp) return;
+
+    // pontos do modal
+    var gained = gainedFromModal();
+    if (!gained) return; // se errou a questão, não há pontos a salvar
+
+    // garante currentPlayer
+    if (!window.currentPlayer) {
+      var nameInput  = $('player-name-input');
+      var classInput = $('class-group-input');
+      window.currentPlayer = {
+        player_name: (nameInput && nameInput.value || '').trim() || 'Aluno',
+        total_score: 0,
+        current_level: 1,
+        badges_earned: '',
+        challenges_completed: 0,
+        class_group: (classInput && classInput.value || '').trim() || ''
+      };
+    }
+
+    var p = window.currentPlayer;
+    if (!p.player_name) return;
+
+    // soma imediatamente e recalcula nível
+    p.total_score = (p.total_score || 0) + gained;
+    p.current_level = Math.max(p.current_level || 1, Math.floor((p.total_score || 0)/1000) + 1);
+
+    updateHUD(p);
+    saveToSupabase(p, function(){ refreshLeaderboardAndHighlight(); });
+
+    lastSavedStamp = stamp;
+  }
+
+  function attach(){
+    var btn = $('result-continue');
+    if (!btn) return false;
+    if (btn.__savedHook) return true;
+
+    // remove event listeners antigos clonando o botão
+    var clone = btn.cloneNode(true);
+    btn.parentNode.replaceChild(clone, btn);
+
+    // nosso handler roda em CAPTURE para acontecer antes do fluxo interno
+    clone.addEventListener('click', handler, true);
+    clone.__savedHook = true;
+    return true;
+  }
+
+  if (!attach()) {
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries++;
+      if (attach() || tries > 20) clearInterval(iv);
+    }, 400);
+  }
+})();
+</script>
+``
+  <style>
+/* Destaque da linha do aluno no ranking */
+@keyframes rowGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
+  60%  { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+.row-highlight {
+  border: 1px solid rgba(16,185,129,.6) !important;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.35);
+  animation: rowGlow 2s ease-out infinite;
+}
+</style>
+
+<script>
+/* ===========================================================
+   FIX CONTINUAR PRESO + SALVAR A CADA ACERTO (ES5 compatível)
+   - Recria o botão "CONTINUAR" sem listeners antigos
+   - CAPTURE: salva pontos no Supabase
+   - BUBBLE: chama continueAfterResult() para prosseguir o jogo
+   =========================================================== */
+(function fixContinueAndLiveSave(){
+  var SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  function $(id){ return document.getElementById(id); }
+  function txt(el){ return el ? (el.textContent || el.innerText || '') : ''; }
+
+  function gainedFromModal(){
+    var t = txt($('result-points'));           // ex.: "+100 XP"
+    var m = t.match(/\+(\d+)/);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+  function isRankingOpen(){
+    var m = $('leaderboard-modal');
+    return m && m.className.indexOf('hidden') === -1;
+  }
+  function updateHUD(p){
+    var scoreEl = $('score-display');
+    var levelEl = $('level-display');
+    var xpEl    = $('xp-display');
+    var bar     = $('xp-bar');
+    if (scoreEl) scoreEl.textContent = p.total_score || 0;
+    if (levelEl) levelEl.textContent = p.current_level || 1;
+    var xp = (p.total_score || 0) % 1000;
+    if (xpEl)  xpEl.textContent = xp + '/1000 XP';
+    if (bar)   bar.style.width  = ((xp / 1000) * 100) + '%';
+  }
+  function saveToSupabase(p, done){
+    var body = {
+      player_name: p.player_name,
+      total_score: p.total_score || 0,
+      current_level: p.current_level || 1,
+      badges_earned: p.badges_earned || '',
+      challenges_completed: p.challenges_completed || 0,
+      class_group: p.class_group || ''
+    };
+    if (typeof window.apiPost === 'function') {
+      window.apiPost('/save-player', body).then(function(){ if(done) done(200); }).catch(function(){ if(done) done(500); });
+      return;
+    }
+    fetch(SUPABASE_BASE + '/save-player', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify(body)
+    }).then(function(r){ if(done) done(r.status); }).catch(function(){ if(done) done(500); });
+  }
+  function refreshLeaderboardAndHighlight(){
+    if (!isRankingOpen()) return;
+    if (typeof window.updateLeaderboard === 'function') {
+      window.updateLeaderboard();
+      setTimeout(function(){
+        try {
+          var list = $('leaderboard-list');
+          var name = window.currentPlayer && window.currentPlayer.player_name;
+          if (!list || !name) return;
+          var i, cards = list.children, card, found = null;
+          for (i=0;i<cards.length;i++){
+            card = cards[i];
+            card.classList.remove('row-highlight');
+            if ((card.textContent || '').indexOf(name) !== -1) { found = card; }
+          }
+          if (found) {
+            found.classList.add('row-highlight');
+            found.scrollIntoView({ block:'nearest', behavior:'smooth' });
+          }
+        } catch(e){}
+      }, 150);
+    }
+  }
+
+  // Evita salvar 2x a mesma pergunta
+  var lastSavedKey = null;
+  function currentQuestionKey(){
+    if (typeof window.currentQuestionIndex === 'number' && window.currentChallenge) {
+      return 'q_' + window.currentChallenge.id + '_' + window.currentQuestionIndex;
+    }
+    return 't_' + Date.now();
+  }
+
+  function captureSaveHandler(/*ev*/){
+    // calcula uma chave da questão atual
+    var key = currentQuestionKey();
+    if (key === lastSavedKey) return;
+
+    var gained = gainedFromModal();
+    if (!gained) return; // sem pontos → não salva
+
+    if (!window.currentPlayer) {
+      var nameInput  = $('player-name-input');
+      var classInput = $('class-group-input');
+      window.currentPlayer = {
+        player_name: (nameInput && nameInput.value || 'Aluno').trim(),
+        total_score: 0, current_level: 1,
+        badges_earned: '', challenges_completed: 0,
+        class_group: (classInput && classInput.value || '').trim()
+      };
+    }
+    var p = window.currentPlayer;
+    if (!p.player_name) return;
+
+    // Soma imediatamente e recalcula nível
+    p.total_score = (p.total_score || 0) + gained;
+    p.current_level = Math.max(p.current_level || 1, Math.floor((p.total_score || 0)/1000) + 1);
+
+    updateHUD(p);
+    saveToSupabase(p, function(){ refreshLeaderboardAndHighlight(); });
+    lastSavedKey = key;
+  }
+
+  function bubbleProceedHandler(ev){
+    try {
+      if (typeof window.continueAfterResult === 'function') {
+        // chama o fluxo original para fechar o modal e ir à próxima pergunta
+        window.continueAfterResult(ev);
+      }
+    } catch(e){ console.warn('continueAfterResult error', e); }
+  }
+
+  function wire(){
+    var btn = $('result-continue');
+    if (!btn) return false;
+
+    // Clona para REMOVER listeners antigos que podem ter ficado presos
+    var clone = btn.cloneNode(true);
+    btn.parentNode.replaceChild(clone, btn);
+
+    // 1) CAPTURE → salva pontos antes do jogo avançar
+    clone.addEventListener('click', captureSaveHandler, true);
+
+    // 2) BUBBLE  → prossegue o jogo SEM impedir propagação
+    clone.addEventListener('click', bubbleProceedHandler, false);
+
+    clone.__fixed = true;
+    return true;
+  }
+
+  // Tenta ligar agora; se ainda não existir, re-tenta por alguns instantes
+  if (!wire()) {
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries++;
+      if (wire() || tries > 20) clearInterval(iv);
+    }, 400);
+  }
+})();
+</script>
+  <style>
+/* Destaque da linha do aluno no ranking (UI) */
+@keyframes rowGlow {
+  0%   { box-shadow: 0 0 0 0 rgba(16,185,129,.55); }
+  60%  { box-shadow: 0 0 0 12px rgba(16,185,129,0); }
+  100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+}
+.row-highlight {
+  border: 1px solid rgba(16,185,129,.6) !important;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.35);
+  animation: rowGlow 2s ease-out infinite;
+}
+</style>
+
+<script>
+/* ===========================================================
+   1) SALVAR UMA ÚNICA VEZ POR QUESTÃO + AVANÇAR O JOGO (ES5)
+   =========================================================== */
+(function fixContinueAndLiveSave(){
+  var SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+  var lastSavedKey = null; // evita salvar 2x a mesma questão
+
+  function $(id){ return document.getElementById(id); }
+  function txt(el){ return el ? (el.textContent || el.innerText || '') : ''; }
+
+  function gainedFromModal(){
+    var t = txt($('result-points')); // ex.: "+150 XP"
+    var m = t.match(/\+(\d+)/);
+    return m ? parseInt(m[1], 10) : 0;
+  }
+  function currentKey(){
+    if (typeof window.currentQuestionIndex === 'number' && window.currentChallenge) {
+      return 'q_' + window.currentChallenge.id + '_' + window.currentQuestionIndex;
+    }
+    return 't_' + Date.now();
+  }
+  function updateHUD(p){
+    var scoreEl = $('score-display');
+    var levelEl = $('level-display');
+    var xpEl    = $('xp-display');
+    var bar     = $('xp-bar');
+    if (scoreEl) scoreEl.textContent = p.total_score || 0;
+    if (levelEl) levelEl.textContent = p.current_level || 1;
+    var xp = (p.total_score || 0) % 1000;
+    if (xpEl)  xpEl.textContent = xp + '/1000 XP';
+    if (bar)   bar.style.width  = ((xp / 1000) * 100) + '%';
+  }
+  function saveToSupabase(p, done){
+    var body = {
+      player_name: p.player_name,
+      total_score: p.total_score || 0,
+      current_level: p.current_level || 1,
+      badges_earned: p.badges_earned || '',
+      challenges_completed: p.challenges_completed || 0,
+      class_group: p.class_group || ''
+    };
+    if (typeof window.apiPost === 'function') {
+      window.apiPost('/save-player', body).then(function(){ if(done) done(200); }).catch(function(){ if(done) done(500); });
+      return;
+    }
+    fetch(SUPABASE_BASE + '/save-player', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    }).then(function(r){ if(done) done(r.status); }).catch(function(){ if(done) done(500); });
+  }
+  function refreshLeaderboardAndHighlight(){
+    var lb = $('leaderboard-modal');
+    if (!lb || lb.className.indexOf('hidden') !== -1) return;
+    if (typeof window.updateLeaderboard === 'function') {
+      window.updateLeaderboard();
+      setTimeout(function(){
+        try {
+          var list = $('leaderboard-list');
+          var name = window.currentPlayer && window.currentPlayer.player_name;
+          if (!list || !name) return;
+          var i, cards = list.children, card, found = null;
+          for (i=0;i<cards.length;i++){
+            card = cards[i];
+            card.classList.remove('row-highlight');
+            if ((card.textContent || '').indexOf(name) !== -1) found = card;
+          }
+          if (found) { found.classList.add('row-highlight'); found.scrollIntoView({block:'nearest', behavior:'smooth'}); }
+        } catch(e){}
+      }, 150);
+    }
+  }
+
+  function captureSave(ev){
+    var key = currentKey();
+    if (key === lastSavedKey) return;
+
+    var gained = gainedFromModal();
+    if (!gained) return; // se errou, não
+
+     <script>
+/* ===========================================================
+   2) PERSISTIR CONCLUSÃO DO DESAFIO + BADGES (sem re-somar score)
+   =========================================================== */
+(function finalizePersist(){
+  var SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  function $(id){ return document.getElementById(id); }
+  function uniqPush(arr, id){ if (id && arr.indexOf(id) === -1) arr.push(id); return arr; }
+
+  function saveToSupabase(p, done){
+    var body = {
+      player_name: p.player_name,
+      total_score: p.total_score || 0,
+      current_level: p.current_level || 1,
+      badges_earned: p.badges_earned || '',
+      challenges_completed: p.challenges_completed || 0,
+      class_group: p.class_group || ''
+    };
+    if (typeof window.apiPost === 'function') {
+      window.apiPost('/save-player', body).then(function(){ if(done) done(200); }).catch(function(){ if(done) done(500); });
+      return;
+    }
+    fetch(SUPABASE_BASE + '/save-player', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    }).then(function(r){ if(done) done(r.status); }).catch(function(){ if(done) done(500); });
+  }
+
+  var origRenderSel = window.renderChallengeSelection || function(){};
+  var origUpdateHUD = window.updatePlayerDisplay || function(){};
+
+  // Substitui o finishChallenge apenas para badges + challenges_completed
+  window.finishChallenge = function () {
+    var p = window.currentPlayer || {};
+    var ch = window.currentChallenge || {};
+    var gainedTotalAlready = p.total_score || 0; // já foi somado por questão
+
+    // incrementa desafios concluídos
+    var newCC = (p.challenges_completed || 0) + 1;
+
+    // badges
+    var badges = (p.badges_earned || '').split(',').filter(function(b){return b;});
+    uniqPush(badges, ch.id); // badge do desafio
+    if (newCC === 1) uniqPush(badges, 'first-challenge');
+    if (typeof window.challengeScore === 'number' && ch && ch.xpReward && window.challengeScore === ch.xpReward)
+      uniqPush(badges, 'perfect-score');
+    if (p.current_level >= 5) uniqPush(badges, 'level-5');
+    if (window.challenges && window.challenges.length && newCC >= window.challenges.length)
+      uniqPush(badges, 'all-challenges');
+
+    // aplica
+    p.challenges_completed = newCC;
+    p.badges_earned = badges.join(',');
+
+    // salva
+    saveToSupabase(p, function(){});
+
+    // volta para a lista de desafios
+    var area = $('challenge-area'), sel = $('challenge-selection'), bad = $('badges-section');
+    if (area) area.classList.add('hidden');
+    if (sel)  sel.classList.remove('hidden');
+    if (bad)  bad.classList.remove('hidden');
+
+    // atualiza HUD e cards
+    try { origUpdateHUD(); } catch(e){}
+    try { origRenderSel(); } catch(e){}
+  };
+})();
 </script>
 
+  <script>
+/* ===========================================================
+   3) updateLeaderboard limpo (só do Supabase) + destaque da linha
+   =========================================================== */
+(function cleanLeaderboard(){
+  var SUPABASE_BASE = 'https://pqtrsgtzrmrmjbijzqvg.supabase.co/functions/v1';
+
+  window.updateLeaderboard = function(){
+    (function(){
+      var list = document.getElementById('leaderboard-list');
+      function setHTML(h){ if (list) list.innerHTML = h; }
+
+      function render(players){
+        if (!players || !players.length) {
+          setHTML('<p class="text-slate-400 text-center py-8">Nenhum jogador ainda. Seja o primeiro!</p>');
+          return;
+        }
+        var name = (window.currentPlayer && window.currentPlayer.player_name) || '';
+        var html = '';
+        for (var i=0;i<players.length;i++){
+          var player = players[i];
+          var medal  = (i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1));
+          var isMe   = name && player.player_name === name;
+          var turma  = player.class_group ? (' • Turma ' + player.class_group) : '';
+          html += ''
+            + '<div class="flex items-center gap-4 p-4 rounded-lg '
+            + (isMe ? 'bg-emerald-900/30 border border-emerald-500/50 row-highlight' : 'bg-slate-800/50')
+            + '" data-name="' + player.player_name + '">'
+            +   '<span class="text-2xl w-10 text-center">' + medal + '</span>'
+            +   '<div class="flex-1">'
+            +     '<p class="font-bold ' + (isMe ? 'text-emerald-400' : 'text-white') + '">' + player.player_name + '</p>'
+            +     '<p class="text-sm text-slate-400">Nível ' + (player.current_level||1) + ' • ' + (player.challenges_completed||0) + ' desafios' + turma + '</p>'
+            +   '</div>'
+            +   '<div class="text-right">'
+            +     '<p class="font-orbitron text-xl text-cyan-400">' + (player.total_score||0) + '</p>'
+            +     '<p class="text-xs text-slate-500">XP</p>'
+            +   '</div>'
+            + '</div>';
+        }
+        setHTML(html);
+      }
+
+      // usa o helper se existir; senão fetch direto
+      if (typeof window.apiGet === 'function') {
+        window.apiGet('/get-leaderboard').then(function(data){ render(data && data.players); })
+          .catch(function(){ setHTML('<p class="text-red-400 text-center py-8">Não foi possível carregar o ranking online.</p>'); });
+      } else {
+        fetch(SUPABASE_BASE + '/get-leaderboard').then(function(r){ return r.json(); })
+          .then(function(data){ render(data && data.players); })
+          .catch(function(){ setHTML('<p class="text-red-400 text-center py-8">Não foi possível carregar o ranking online.</p>'); });
+      }
+    })();
+  };
+})();
+</script>
 </body>
+
 </html>
-``
